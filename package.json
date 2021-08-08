@@ -1,0 +1,57 @@
+{
+  "name": "feathers-notify",
+  "version": "0.0.1",
+  "description": "Add a notification center to your feathers app.",
+  "author": "fratzinger",
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fratzinger/feathers-notify"
+  },
+  "keywords": [
+    "feathers",
+    "feathers.js",
+    "feathers-plugin",
+    "notify",
+    "notification",
+    "authorization"
+  ],
+  "license": "MIT",
+  "main": "dist/",
+  "types": "dist/",
+  "directories": {
+    "test": "test",
+    "lib": "lib"
+  },
+  "scripts": {
+    "preversion": "npm run lint && npm run test && npm run compile",
+    "publish": "git push origin --tags && git push origin",
+    "compile": "shx rm -rf dist/ && tsc",
+    "release:pre": "npm version prerelease && npm publish --tag pre",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish",
+    "mocha": "cross-env NODE_ENV=test TS_NODE_PROJECT='tsconfig.test.json' mocha --timeout 5000",
+    "test": "npm run mocha",
+    "coverage": "nyc npm run test",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "docs": "vitepress dev docs",
+    "docs:build": "vitepress build docs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@types/mocha": "^8.2.3",
+    "@types/node": "^15.14.4",
+    "@typescript-eslint/eslint-plugin": "^4.28.5",
+    "@typescript-eslint/parser": "^4.28.5",
+    "cross-env": "^7.0.3",
+    "feathers-memory": "^4.1.0",
+    "mocha": "^8.4.0",
+    "nyc": "^15.1.0",
+    "shx": "^0.3.3",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.3.5",
+    "vitepress": "^0.13.2"
+  }
+}
