@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Add a notification center to your feathers app.",
   "author": "fratzinger",
-  "homepage": "",
+  "homepage": "https://feathers-notify.netlify.app/",
   "repository": {
     "type": "git",
     "url": "https://github.com/fratzinger/feathers-notify"
