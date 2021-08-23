@@ -19,4 +19,4 @@ Simply run `npm test` and all your tests in the `test/` directory will be run. T
 
 ## Help
 
-For more information on all the things you can do, visit [FeathersJS](http://docs.feathersjs.com) and [CASL](https://casl.js.org/v5/en/).
+For more information on all the things you can do, visit [FeathersJS](http://docs.feathersjs.com).

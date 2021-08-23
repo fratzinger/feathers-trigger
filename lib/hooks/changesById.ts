@@ -1,4 +1,4 @@
-import _isEqual from "lodash/isEqual";
+// import _isEqual from "lodash/isEqual";
 import type { HookContext, Id } from "@feathersjs/feathers";
 import { getItems } from "feathers-hooks-common";
 
@@ -56,31 +56,31 @@ export const changesByIdBefore = async (
   return context;
 };
 
-const getDiffedKeys = (
-  obj1: Record<string, unknown>,
-  obj2: Record<string, unknown>,
-  blacklist: string[] = []
-): string[] => {
-  const keysDiff = [];
-  for (const key in obj1) {
-    if (
-      !blacklist.includes(key) &&
-          (!before[key] || !_isEqual(after[key], before[key]))
-    ) {
-      keysDiff.push(key);
-    }
-  }
-  for (const key in obj2) {
-    if (
-      !blacklist.includes(key) &&
-        (!after[key] || !_isEqual(after[key], before[key])) &&
-        !keysDiff.includes(key)
-    ) {
-      keysDiff.push(key);
-    }
-  }
-  return keysDiff;
-};
+// const getDiffedKeys = (
+//   obj1: Record<string, unknown>,
+//   obj2: Record<string, unknown>,
+//   blacklist: string[] = []
+// ): string[] => {
+//   const keysDiff = [];
+//   for (const key in obj1) {
+//     if (
+//       !blacklist.includes(key) &&
+//           (!before[key] || !_isEqual(after[key], before[key]))
+//     ) {
+//       keysDiff.push(key);
+//     }
+//   }
+//   for (const key in obj2) {
+//     if (
+//       !blacklist.includes(key) &&
+//         (!after[key] || !_isEqual(after[key], before[key])) &&
+//         !keysDiff.includes(key)
+//     ) {
+//       keysDiff.push(key);
+//     }
+//   }
+//   return keysDiff;
+// };
 
 export const changesByIdAfter = async <T>(
   context: HookContext,

@@ -62,7 +62,6 @@ export interface SubscriptionUpdate extends SubscriptionBasic {
   method: "update" | "patch"
   conditionsBefore?: Record<string, unknown>
   conditionsAfter?: Record<string, unknown>
-  fields?: string[]
 }
 
 export interface SubscriptionRemove extends SubscriptionBasic {

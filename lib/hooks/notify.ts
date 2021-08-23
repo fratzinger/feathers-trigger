@@ -7,7 +7,7 @@ import sift from "sift";
 import _cloneDeep from "lodash/cloneDeep";
 import type { SetRequired } from "type-fest";
 
-export default (
+const notify = (
   options: SetRequired<HookNotifyOptions<unknown>, "notify" | "subscriptions">
 ): ((context: HookContext) => Promise<HookContext>) => {
   if (!options.notify) { 
@@ -30,7 +30,7 @@ export default (
   };
 };
 
-const beforeHook = async (
+export const beforeHook = async (
   context: HookContext, 
   options: HookNotifyOptions<unknown>
 ): Promise<HookContext> => {
@@ -56,7 +56,7 @@ const defaultOptions: HookNotifyOptions<unknown> = {
   isBlocking: false
 };
 
-const afterHook = async (
+export const afterHook = async (
   context: HookContext, 
   _options: HookNotifyOptions<unknown>
 ): Promise<HookContext> => {
@@ -113,11 +113,17 @@ const afterHook = async (
                     
       const { before, after } = item;
       let mustacheView: Record<string, unknown> = {
-        before,
         after,
+        before,
+        data: context.data,
+        id: context.id,
+        method: context.method,
         now,
+        params: context.params,
+        path: context.path,
         service: context.service,
-        method: context.method
+        type: context.type,
+        user: context.params,
       };
       if (options.view && typeof options.view === "function") {
         if (typeof options.view === "function") {
@@ -151,3 +157,5 @@ const afterHook = async (
         
   return context;
 };
+
+export default notify;

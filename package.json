@@ -42,27 +42,27 @@
     "@feathersjs/feathers": "^4.5.11",
     "eslint-plugin-security": "^1.4.0",
     "feathers-hooks-common": "^5.0.6",
-    "feathers-utils": "^1.5.9-1",
+    "feathers-utils": "^1.5.10",
     "lodash": "^4.17.21",
     "sift": "^14.0.2",
-    "type-fest": "^2.0.0"
+    "type-fest": "^2.1.0"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/lodash": "^4.14.172",
-    "@types/mocha": "^8.2.3",
-    "@types/node": "^15.14.4",
-    "@typescript-eslint/eslint-plugin": "^4.28.5",
-    "@typescript-eslint/parser": "^4.28.5",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.7.1",
+    "@typescript-eslint/eslint-plugin": "^4.29.3",
+    "@typescript-eslint/parser": "^4.29.3",
     "cross-env": "^7.0.3",
     "date-fns": "^2.23.0",
     "eslint": "^7.32.0",
     "feathers-memory": "^4.1.0",
-    "mocha": "^8.4.0",
+    "mocha": "^9.1.0",
     "nyc": "^15.1.0",
     "shx": "^0.3.3",
-    "ts-node": "^9.1.1",
+    "ts-node": "^10.2.1",
     "typescript": "^4.3.5",
-    "vitepress": "^0.13.2"
+    "vitepress": "^0.16.1"
   }
 }
