@@ -13,6 +13,7 @@ module.exports = {
     sidebar: {
       '/': [
         { text: 'Getting Started', link: '/getting-started' },
+        { text: "Hooks", link: '/hooks' }
       ]
     }
   }
