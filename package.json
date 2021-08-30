@@ -1,6 +1,6 @@
 {
   "name": "feathers-notify",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Add a notification center to your feathers app.",
   "author": "fratzinger",
   "homepage": "https://feathers-notify.netlify.app/",
