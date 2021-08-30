@@ -2,9 +2,10 @@ import assert from "assert";
 import changesById from "../../lib/hooks/changesById";
 import { Service } from "feathers-memory";
 import feathers from "@feathersjs/feathers";
+import { HookChangesByIdOptions } from "../../lib/types";
 
 describe("hook - changesById", function() {
-  function mock(cb, hookName, options?, beforeHook?, afterHook?) {
+  function mock(cb, hookName, options?: Partial<HookChangesByIdOptions>, beforeHook?, afterHook?) {
     const app = feathers();
     app.use("/test", new Service());
     const service = app.service("test");
@@ -47,6 +48,24 @@ describe("hook - changesById", function() {
       };
 
       const { service } = mock(cb, "create");
+      assert.ok(!calledCb, "not called cb");
+    
+      const item = await service.create({ test: true, comment: "awesome" });
+    
+      assert.ok(calledCb, "called cb");
+      assert.deepStrictEqual(item, { id: 0, test: true, comment: "awesome" }, "has right result");
+    });
+
+    it("basic create with refetch", async function() {
+      let calledCb = false;
+      const cb = (byId, context) => {
+        calledCb = true;
+        assert.strictEqual(context.path, "test", "cb has context");
+        assert.strictEqual(byId["0"].before, undefined, "before is undefined");
+        assert.deepStrictEqual(byId["0"].item, { id: 0, test: true, comment: "awesome" }, "has right item");
+      };
+
+      const { service } = mock(cb, "create", { refetchItems: true });
       assert.ok(!calledCb, "not called cb");
     
       const item = await service.create({ test: true, comment: "awesome" });
