@@ -43,7 +43,7 @@ describe("hook - changesById", function() {
         calledCb = true;
         assert.strictEqual(context.path, "test", "cb has context");
         assert.strictEqual(byId["0"].before, undefined, "before is undefined");
-        assert.deepStrictEqual(byId["0"].after, { id: 0, test: true, comment: "awesome" }, "has right after");
+        assert.deepStrictEqual(byId["0"].item, { id: 0, test: true, comment: "awesome" }, "has right item");
       };
 
       const { service } = mock(cb, "create");
@@ -63,7 +63,7 @@ describe("hook - changesById", function() {
         calledCb = true;
         assert.strictEqual(context.path, "test", "cb has context");
         assert.deepStrictEqual(byId["0"].before, { id: 0, test: true, comment: "awesome" }, "has right before");
-        assert.deepStrictEqual(byId["0"].after, { id: 0, test: false }, "has right after");
+        assert.deepStrictEqual(byId["0"].item, { id: 0, test: false }, "has right item");
       };
 
       const { service } = mock(cb, "update");
@@ -84,7 +84,7 @@ describe("hook - changesById", function() {
         calledCb = true;
         assert.strictEqual(context.path, "test", "cb has context");
         assert.deepStrictEqual(byId["0"].before, { id: 0, test: true, comment: "awesome" }, "has right before");
-        assert.deepStrictEqual(byId["0"].after, { id: 0, test: false }, "has right after");
+        assert.deepStrictEqual(byId["0"].item, { id: 0, test: false }, "has right item");
       };
       const { service } = mock(cb, "update");
       
@@ -106,7 +106,7 @@ describe("hook - changesById", function() {
         calledCb = true;
         assert.strictEqual(context.path, "test", "cb has context");
         assert.deepStrictEqual(byId["0"].before, { id: 0, test: true, comment: "awesome" }, "has right before");
-        assert.deepStrictEqual(byId["0"].after, { id: 0, test: false, comment: "awesome" }, "has right after");
+        assert.deepStrictEqual(byId["0"].item, { id: 0, test: false, comment: "awesome" }, "has right item");
       };
       const { service } = mock(cb, "patch");
       
@@ -126,7 +126,7 @@ describe("hook - changesById", function() {
         calledCb = true;
         assert.strictEqual(context.path, "test", "cb has context");
         assert.deepStrictEqual(byId["0"].before, { id: 0, test: true, comment: "awesome" }, "has right before");
-        assert.deepStrictEqual(byId["0"].after, { id: 0, test: false, comment: "awesome" }, "has right after");
+        assert.deepStrictEqual(byId["0"].item, { id: 0, test: false, comment: "awesome" }, "has right item");
       };
       const { service } = mock(cb, "patch");
         
@@ -148,7 +148,7 @@ describe("hook - changesById", function() {
         calledCb = true;
         assert.strictEqual(context.path, "test", "cb has context");
         assert.deepStrictEqual(byId["0"].before, { id: 0, test: true, comment: "awesome" }, "has right before");
-        assert.strictEqual(byId["0"].after, undefined, "after is undefined");
+        assert.deepStrictEqual(byId["0"].item, { id: 0, test: true, comment: "awesome" }, "has right item");
       };
 
       const { service } = mock(cb, "remove");

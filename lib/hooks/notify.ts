@@ -1,11 +1,21 @@
 import type { HookContext } from "@feathersjs/feathers";
-import { ChangesById, HookNotifyOptions } from "../types";
+import { ChangesById, HookNotifyOptions, Subscription } from "../types";
 import { checkContext } from "feathers-hooks-common";
 import { changesByIdBefore, changesByIdAfter } from "./changesById";
 import transformMustache from "../utils/transformMustache";
 import sift from "sift";
 import _cloneDeep from "lodash/cloneDeep";
 import type { SetRequired } from "type-fest";
+
+const defaultOptions: HookNotifyOptions<unknown> = {
+  items: undefined,
+  notify: undefined,
+  view: undefined,
+  params: undefined,
+  subscriptions: undefined,
+  refetchItems: () => false,
+  isBlocking: false
+};
 
 const notify = (
   options: SetRequired<HookNotifyOptions<unknown>, "notify" | "subscriptions">
@@ -19,8 +29,7 @@ const notify = (
   }
 
   return async (context: HookContext): Promise<HookContext> => {
-    
-    checkContext(context, null, ["create", "update", "patch", "remove"]);
+    checkContext(context, null, ["create", "update", "patch", "remove"], "notify");
     
     if (context.type === "before") {
       return await beforeHook(context, options);
@@ -36,24 +45,14 @@ export const beforeHook = async (
 ): Promise<HookContext> => {
   if (
     Array.isArray(options.subscriptions) && 
-    options.subscriptions.every(x => x.service !== context.path && x.method !== context.method)
+    !subscriptionsForMethod(options.subscriptions, context.path, context.method).length
   ) {
     return context;
   }
 
-  changesByIdBefore(context, { params: options.params, skipHooks: true });
+  await changesByIdBefore(context, { params: options.params, skipHooks: false });
 
   return context;
-};
-
-const defaultOptions: HookNotifyOptions<unknown> = {
-  items: undefined,
-  notify: undefined,
-  view: undefined,
-  params: undefined,
-  subscriptions: undefined,
-  refetchItems: () => false,
-  isBlocking: false
 };
 
 export const afterHook = async (
@@ -73,13 +72,12 @@ export const afterHook = async (
     null,
     { 
       params: options.params, 
-      skipHooks: true, 
-      removeSelect: true,
+      skipHooks: false,
       refetchItems 
     }
   );
 
-  const changesById: ChangesById<unknown> = context.params?.changesById;
+  const changesById: ChangesById = context.params?.changesById;
 
   if (!changesById) { return context; }
 
@@ -87,7 +85,9 @@ export const afterHook = async (
     ? await options.subscriptions(context, Object.values(changesById))
     : options.subscriptions;
 
-  if (!subscriptions?.length || subscriptions.every(x => x.service !== context.service && x.method !== context.method)) { return context; }
+  const subs = subscriptionsForMethod(subscriptions, context.path, context.method);
+
+  if (!subs?.length) { return context; }
 
   const items = (typeof options.items === "function") 
     ? await options.items(Object.values(changesById), subscriptions, context)
@@ -99,21 +99,19 @@ export const afterHook = async (
 
   const promises = [];
 
-  for (const item of items) {
+  for (const change of items) {
+    const { before, item } = change;
     const subsPerItem = [];
-    for (let sub of subscriptions) {
-      if (sub.service !== context.path || sub.method !== context.method) {
-        continue;
-      }
-      let { conditionsBefore, conditionsAfter } = sub;
+    
+    for (let sub of subs) {
+      let { conditions, conditionsBefore } = sub;
 
-      if (conditionsBefore && conditionsAfter) {
+      if (conditions || conditionsBefore) {
         sub = _cloneDeep(sub);
       }
-                    
-      const { before, after } = item;
+
       let mustacheView: Record<string, unknown> = {
-        after,
+        item,
         before,
         data: context.data,
         id: context.id,
@@ -127,27 +125,27 @@ export const afterHook = async (
       };
       if (options.view && typeof options.view === "function") {
         if (typeof options.view === "function") {
-          mustacheView = await options.view(mustacheView, { item, items, subscription: sub, subscriptions, context });
+          mustacheView = await options.view(mustacheView, { item: change, items, subscription: sub, subscriptions, context });
         } else {
           mustacheView = Object.assign(mustacheView, options.view);
         }
       }
       
+      conditions = conditions && transformMustache(conditions, mustacheView);
       conditionsBefore = conditionsBefore && transformMustache(conditionsBefore, mustacheView);
-      conditionsAfter = conditionsAfter && transformMustache(conditionsAfter, mustacheView);
+      
+      const areConditionsFulFilled = !conditions || sift(conditions)(item);
+      const areConditionsBeforeFulFilled = !conditionsBefore || sift(conditionsBefore)(before);
 
-      const isBeforeFulFilled = !conditionsBefore || [before].filter(sift(conditionsBefore)).length === 1;
-      const isAfterFulFilled = !conditionsAfter || [after].filter(sift(conditionsAfter)).length === 1;
-
-      if (!isBeforeFulFilled || !isAfterFulFilled) {
+      if (!areConditionsFulFilled || !areConditionsBeforeFulFilled) {
         continue;
       }
 
-      subsPerItem.push(Object.assign({}, sub, { conditionsBefore, conditionsAfter }));
+      subsPerItem.push(Object.assign({}, sub, { conditionsBefore, conditions }));
     }
 
     if (subsPerItem.length) {
-      promises.push(options.notify(item, subsPerItem, items, context));
+      promises.push(options.notify(change, subsPerItem, items, context));
     }
   }
 
@@ -156,6 +154,24 @@ export const afterHook = async (
   }
         
   return context;
+};
+
+const subscriptionsForMethod = (
+  subscriptions: Subscription[], 
+  servicePath: string, 
+  method: string
+): Subscription[] => {
+  return subscriptions.filter(sub => {
+    if (
+      (typeof sub.service === "string" && sub.service !== servicePath) || 
+      (Array.isArray(sub.service) && !sub.service.includes(servicePath))
+    ) { return false; }
+    if (
+      (typeof sub.method === "string" && sub.method !== method) ||
+      (Array.isArray(sub.method) && !sub.method.includes(method))
+    ) { return false; }
+    return true;
+  });
 };
 
 export default notify;

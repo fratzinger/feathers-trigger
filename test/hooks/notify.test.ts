@@ -8,11 +8,12 @@ import { addDays } from "date-fns";
 
 describe("notify", function() {
   function mock(
-    hookName: MethodName, 
+    hookNames: MethodName | MethodName[], 
     options?: HookNotifyOptions<unknown>, 
     beforeHook?: (context: HookContext) => Promise<HookContext>, 
     afterHook?: (context: HookContext) => Promise<HookContext>
   ) {
+    hookNames = (Array.isArray(hookNames)) ? hookNames : [hookNames];
     const app = feathers();
     app.use("/tests", new Service({ multi: true }));
     const service = app.service("tests");
@@ -24,20 +25,75 @@ describe("notify", function() {
     const afterAll = [hook];
     if (afterHook) { afterAll.push(afterHook); }
 
-    service.hooks({
-      before: {
-        [hookName]: beforeAll,
-      },
-      after: {
-        [hookName]: afterAll
-      }
+    const hooks = {
+      before: {},
+      after: {}
+    };
+
+    hookNames.forEach(hookName => {
+      hooks.before[hookName] = beforeAll;
+      hooks.after[hookName] = afterAll;
     });
+
+    service.hooks(hooks);
     
     return { 
       app, 
       service 
     };
   }
+
+  it("notify with method as array", async function() {
+    let cbCount = 0;
+    const methods: MethodName[] = ["create", "update", "patch", "remove"];
+    const { service } = mock(methods, {
+      subscriptions: [{
+        method: methods,
+        service: "tests"
+      }],
+      notify: () => {
+        cbCount++;
+      }
+    });
+
+    await service.create({ id: 0, test: true });
+    assert.strictEqual(cbCount, 1, "notify cb was called");
+
+    await service.update(0, { id: 0, test: false });
+    assert.strictEqual(cbCount, 2, "notify cb was called");
+
+    await service.patch(0, { test: true });
+    assert.strictEqual(cbCount, 3, "notify cb was called");
+
+    await service.remove(0);
+    assert.strictEqual(cbCount, 4, "notify cb was called");
+  });
+
+  it("notify with service as array", async function() {
+    let cbCount = 0;
+    const methods: MethodName[] = ["create", "update", "patch", "remove"];
+    const { service } = mock(methods, {
+      subscriptions: [{
+        method: methods,
+        service: ["tests", "tests2", "tests3"]
+      }],
+      notify: () => {
+        cbCount++;
+      }
+    });
+
+    await service.create({ id: 0, test: true });
+    assert.strictEqual(cbCount, 1, "notify cb was called");
+
+    await service.update(0, { id: 0, test: false });
+    assert.strictEqual(cbCount, 2, "notify cb was called");
+
+    await service.patch(0, { test: true });
+    assert.strictEqual(cbCount, 3, "notify cb was called");
+
+    await service.remove(0);
+    assert.strictEqual(cbCount, 4, "notify cb was called");
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   it.skip("manipulate items", function() {});
@@ -133,7 +189,7 @@ describe("notify", function() {
         subscriptions: [{
           method: "create",
           service: "tests",
-          conditionsAfter: { id: 1 }
+          conditions: { id: 1 }
         }],
         notify: async (item) => {
           cbCount++;
@@ -295,7 +351,7 @@ describe("notify", function() {
         subscriptions: [{
           method: "patch",
           service: "tests",
-          conditionsAfter: { date: { $lt: "{{ before.date }}" } }
+          conditions: { date: { $lt: "{{ before.date }}" } }
         }],
         notify: async () => {
           cbCount++;
