@@ -1,4 +1,5 @@
 import _get from "lodash/get";
+import _has from "lodash/has";
 import _set from "lodash/set";
 import _isPlainObject from "lodash/isPlainObject";
 
@@ -15,15 +16,11 @@ const transformMustache = <T>(
       return item;
     }
 
-    const trimmed = item.trim();
-
-    if (
-      trimmed.startsWith("{{") && trimmed.endsWith("}}") &&
-        (trimmed.match(/{{/g) || []).length === 1 &&
-        (trimmed.match(/}}/g) || []).length === 1) {
-      const keys = trimmed.match(/{{\s*[\w.]+\s*}}/g)
+    if ((item.match(/{{/g) || []).length === 1 &&
+        (item.match(/}}/g) || []).length === 1) {
+      const keys = item.match(/{{\s*[\w.]+\s*}}/g)
         .map(x => x.match(/[\w.]+/)[0]);
-      if (keys.length === 1) {
+      if (keys.length === 1 && _has(view, keys[0])) {
         const val = _get(view, keys[0]);
         //@ts-expect-error typing of root
         _set(root, path, val);
