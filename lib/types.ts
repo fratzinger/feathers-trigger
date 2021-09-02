@@ -1,4 +1,5 @@
 import type { HookContext, Params } from "@feathersjs/feathers";
+import type { Promisable } from "type-fest";
 
 export type MethodName = "create" | "update" | "patch" | "remove";
 
@@ -12,7 +13,7 @@ export type ChangesById<T = unknown> = {
     [key: number]: Change<T>
 }
 
-export type ManipulateParams = (params: Params, context: HookContext) => (Params | Promise<Params>)
+export type ManipulateParams = (params: Params, context: HookContext) => (Promisable<Params>)
 
 export interface HookChangesByIdOptions {
   skipHooks: boolean
@@ -28,31 +29,31 @@ interface ViewContext<T = unknown> {
   context: HookContext
 }
 
-export type TransformView<T = unknown> = 
-  undefined | 
-  ((view: Record<string, unknown>, viewContext: ViewContext<T>) => Promise<Record<string, unknown>>) | 
-  Record<string, unknown>
-
 export interface HookNotifyOptions<T> {
-  subscriptions: Subscription[] | ((context: HookContext, items: Change<T>[]) => Promise<Subscription[]>)
-  /*
-   * Option to manipulate the items
-   */
-  items?: (items: Change<T>[], subscriptions: Subscription[], context: HookContext) => Promise<Change<T>[]>
-  notify: (item: Change<T>, subscriptions: Subscription[], items: Change<T>[], context: HookContext) => (void | Promise<void>)
-  view?: TransformView<T>
-  refetchItems?: (context: HookContext) => boolean | Promise<boolean>,
-  params?: ManipulateParams
+  subscriptions: Subscription[] | ((context: HookContext, items: Change<T>[]) => Promisable<Subscription[]>)
+  notify: (item: Change<T>, subscription: Subscription, items: Change<T>[], context: HookContext) => (Promisable<void>)
   isBlocking?: boolean
 }
+
+export type TransformView<T = unknown> = 
+  undefined | 
+  ((view: Record<string, unknown>, viewContext: ViewContext<T>) => Promisable<Record<string, unknown>>) | 
+  Record<string, unknown>
+
+export type TransformParams =
+  undefined |
+  ((item: Record<string, unknown>, subscription: Subscription, items: Record<string, unknown>[], subscriptions: Subscription[]) => Promisable<Params>) |
+  Params
 
 export interface Subscription {
   service: string | string[]
   method: string | string[]
+  conditions?: true | Record<string, unknown>
+  conditionsBefore?: true | Record<string, unknown>
+  view?: TransformView
+  params?: TransformParams
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: number]: any
-  conditions?: Record<string, unknown>
-  conditionsBefore?: Record<string, unknown>
 }

@@ -5,6 +5,9 @@ module.exports = {
     mocha: true
   },
   parser: "@typescript-eslint/parser",
+  parserOptions: {
+    "project": "./tsconfig.json"
+  },
   plugins: [
     "security",
     "@typescript-eslint"
@@ -30,7 +33,8 @@ module.exports = {
     }],
     "security/detect-object-injection": "off",
     "object-curly-spacing": ["warn", "always"],
-    "prefer-const": ["warn"]
+    "prefer-const": ["warn"],
+    "@typescript-eslint/require-await": ["error"]
   },
   overrides: [
     {

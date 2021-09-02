@@ -8,19 +8,15 @@ import _cloneDeep from "lodash/cloneDeep";
 import type { SetRequired } from "type-fest";
 
 const defaultOptions: HookNotifyOptions<unknown> = {
-  items: undefined,
   notify: undefined,
-  view: undefined,
-  params: undefined,
   subscriptions: undefined,
-  refetchItems: () => false,
   isBlocking: false
 };
 
 const notify = (
   options: SetRequired<HookNotifyOptions<unknown>, "notify" | "subscriptions">
 ): ((context: HookContext) => Promise<HookContext>) => {
-  if (!options.notify) { 
+  if (!options.notify || typeof options.notify !== "function") { 
     throw new Error("You should define a notify function");
   }
 
@@ -50,7 +46,7 @@ export const beforeHook = async (
     return context;
   }
 
-  await changesByIdBefore(context, { params: options.params, skipHooks: false });
+  await changesByIdBefore(context, { skipHooks: false });
 
   return context;
 };
@@ -65,15 +61,12 @@ export const afterHook = async (
     _options
   );
 
-  const refetchItems = await options.refetchItems(context);
-
   await changesByIdAfter(
     context, 
     null,
-    { 
-      params: options.params, 
+    {
       skipHooks: false,
-      refetchItems 
+      refetchItems: false
     }
   );
 
@@ -89,24 +82,28 @@ export const afterHook = async (
 
   if (!subs?.length) { return context; }
 
-  const items = (typeof options.items === "function") 
-    ? await options.items(Object.values(changesById), subscriptions, context)
-    : Object.values(changesById);
+  const changes = Object.values(changesById);
 
-  if (!items?.length) { return context; }
+  if (!changes?.length) { return context; }
 
   const now = new Date();
 
   const promises = [];
 
-  for (const change of items) {
-    const { before, item } = change;
-    const subsPerItem = [];
+  for (const change of changes) {
+    const { before } = change;
     
     for (let sub of subs) {
-      let { conditions, conditionsBefore } = sub;
+      let { 
+        conditions, 
+        conditionsBefore
+      } = sub;
 
-      if (conditions || conditionsBefore) {
+      let { item } = change;
+
+      let changeForSub = change;
+
+      if (conditions || conditionsBefore || sub.params || sub.view) {
         sub = _cloneDeep(sub);
       }
 
@@ -123,29 +120,48 @@ export const afterHook = async (
         type: context.type,
         user: context.params,
       };
-      if (options.view && typeof options.view === "function") {
-        if (typeof options.view === "function") {
-          mustacheView = await options.view(mustacheView, { item: change, items, subscription: sub, subscriptions, context });
-        } else {
-          mustacheView = Object.assign(mustacheView, options.view);
+
+      if (sub.params) {
+        const params = (typeof sub.params === "function")
+          ? sub.params(change, sub, changes, subscriptions)
+          : sub.params;
+
+        if (params) {
+          const idField = getIdField(context);
+          item = await context.service.get(item[idField], params);
+          if (item) {
+            mustacheView.item = item;
+            changeForSub = Object.assign({}, change, { item });
+          }
         }
       }
+
+      if (sub.view) {
+        if (typeof sub.view === "function") {
+          mustacheView = await sub.view(mustacheView, { item: changeForSub, items: changes, subscription: sub, subscriptions, context });
+        } else {
+          mustacheView = Object.assign(mustacheView, sub.view);
+        }
+      }
+
+      if (conditions !== undefined && conditions !== true) {
+        conditions = transformMustache(conditions, mustacheView);
+      }
+
+      if (conditionsBefore !== undefined && conditionsBefore !== true) {
+        conditionsBefore = transformMustache(conditionsBefore, mustacheView);
+      }
       
-      conditions = conditions && transformMustache(conditions, mustacheView);
-      conditionsBefore = conditionsBefore && transformMustache(conditionsBefore, mustacheView);
-      
-      const areConditionsFulFilled = !conditions || sift(conditions)(item);
-      const areConditionsBeforeFulFilled = !conditionsBefore || sift(conditionsBefore)(before);
+      const areConditionsFulFilled = conditions === undefined || conditions === true || sift(conditions)(item);
+      const areConditionsBeforeFulFilled = conditionsBefore === undefined || conditionsBefore === true || sift(conditionsBefore)(before);
 
       if (!areConditionsFulFilled || !areConditionsBeforeFulFilled) {
         continue;
       }
 
-      subsPerItem.push(Object.assign({}, sub, { conditionsBefore, conditions }));
-    }
+      sub = Object.assign({}, sub, { conditionsBefore, conditions });
 
-    if (subsPerItem.length) {
-      promises.push(options.notify(change, subsPerItem, items, context));
+      promises.push(options.notify(changeForSub, sub, changes, context));
     }
   }
 
@@ -172,6 +188,10 @@ const subscriptionsForMethod = (
     ) { return false; }
     return true;
   });
+};
+
+const getIdField = (context: Pick<HookContext, "service">): string => {
+  return context.service.options.id;
 };
 
 export default notify;
