@@ -6,154 +6,295 @@ import { MethodName, HookNotifyOptions } from "../../lib/types";
 
 import { addDays } from "date-fns";
 
-describe("notify", function() {
-  function mock(
-    hookNames: MethodName | MethodName[], 
-    options?: HookNotifyOptions<unknown>, 
-    beforeHook?: (context: HookContext) => Promise<HookContext>, 
-    afterHook?: (context: HookContext) => Promise<HookContext>
-  ) {
-    hookNames = (Array.isArray(hookNames)) ? hookNames : [hookNames];
-    const app = feathers();
-    app.use("/tests", new Service({ multi: true }));
-    const service = app.service("tests");
-    const hook = notify(options);
+function mock(
+  hookNames: MethodName | MethodName[], 
+  options?: HookNotifyOptions<unknown>, 
+  beforeHook?: (context: HookContext) => Promise<HookContext>, 
+  afterHook?: (context: HookContext) => Promise<HookContext>
+) {
+  hookNames = (Array.isArray(hookNames)) ? hookNames : [hookNames];
+  const app = feathers();
+  app.use("/tests", new Service({ multi: true }));
+  const service = app.service("tests");
+  const hook = notify(options);
 
-    const beforeAll = [hook];
-    if (beforeHook) { beforeAll.push(beforeHook); }
+  const beforeAll = [hook];
+  if (beforeHook) { beforeAll.push(beforeHook); }
 
-    const afterAll = [hook];
-    if (afterHook) { afterAll.push(afterHook); }
+  const afterAll = [hook];
+  if (afterHook) { afterAll.push(afterHook); }
 
-    const hooks = {
-      before: {},
-      after: {}
-    };
+  const hooks = {
+    before: {},
+    after: {}
+  };
 
-    hookNames.forEach(hookName => {
-      hooks.before[hookName] = beforeAll;
-      hooks.after[hookName] = afterAll;
-    });
-
-    service.hooks(hooks);
-    
-    return { 
-      app, 
-      service 
-    };
-  }
-
-  it("does not throw for minimal example", async function() {
-    assert.doesNotThrow(
-      //@ts-ignore
-      () => mock("create", {
-        subscriptions: [],
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        notify: () => {}
-      }),
-      "passes"
-    );
+  hookNames.forEach(hookName => {
+    hooks.before[hookName] = beforeAll;
+    hooks.after[hookName] = afterAll;
   });
 
-  it("throws if no notify function is defined", async function() {
-    assert.throws(
-      //@ts-ignore
-      () => mock("create", {
-        subscriptions: [{
-          method: "create",
-          service: "tests"
-        }]
-      }),
-      "throws without"
-    );
+  service.hooks(hooks);
+  
+  return { 
+    app, 
+    service 
+  };
+}
 
-    assert.throws(
-      () => mock("create", {
+describe("notify", function() {
+  describe("general", function() {
+    it("does not throw for minimal example", function() {
+      assert.doesNotThrow(
+        //@ts-ignore
+        () => mock("create", {
+          subscriptions: [],
+          // eslint-disable-next-line @typescript-eslint/no-empty-function
+          notify: () => {}
+        }),
+        "passes"
+      );
+    });
+  
+    it("throws if no notify function is defined", function() {
+      assert.throws(
+        //@ts-ignore
+        () => mock("create", {
+          subscriptions: [{
+            method: "create",
+            service: "tests"
+          }]
+        }),
+        "throws without"
+      );
+  
+      assert.throws(
+        () => mock("create", {
+          subscriptions: [{
+            method: "create",
+            service: "tests"
+          }],
+          //@ts-ignore
+          notify: {}
+        }),
+        "throws with object"
+      );
+    });
+  
+    it("throws if no subscriptions are defined", function() {
+      assert.throws(
+        //@ts-ignore
+        () => mock("create", {
+          // eslint-disable-next-line @typescript-eslint/no-empty-function
+          notify: () => {}
+        }),
+        "throws"
+      );
+    });
+  
+    it("throws if has no notify function", function() {
+      assert.throws(
+        //@ts-ignore
+        () => mock("create", {
+          subscriptions: [{
+            method: "create",
+            service: "tests"
+          }]
+        }),
+        "throws"
+      );
+    });
+
+    it("throws on find and get", async function() {
+      // @ts-expect-error find is not allowed;
+      const { service: service1 } = mock("find", {
         subscriptions: [{
           method: "create",
           service: "tests"
         }],
-        //@ts-ignore
-        notify: {}
-      }),
-      "throws with object"
-    );
-  });
-
-  it("throws if no subscriptions are defined", async function() {
-    assert.throws(
-      //@ts-ignore
-      () => mock("create", {
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         notify: () => {}
-      }),
-      "throws"
-    );
-  });
+      });
 
-  it("throws if has no notify function", async function() {
-    assert.throws(
-      //@ts-ignore
-      () => mock("create", {
+      await assert.rejects(
+        service1.find({ query: { } }),
+        "find rejects"
+      );
+
+      // @ts-expect-error find is not allowed;
+      const { service: service2 } = mock("get", {
         subscriptions: [{
           method: "create",
           service: "tests"
-        }]
-      }),
-      "throws"
-    );
-  });
+        }],
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        notify: () => {}
+      });
 
-  it("notify with method as array", async function() {
-    let cbCount = 0;
-    const methods: MethodName[] = ["create", "update", "patch", "remove"];
-    const { service } = mock(methods, {
-      subscriptions: [{
-        method: methods,
-        service: "tests"
-      }],
-      notify: () => {
-        cbCount++;
-      }
+      await assert.rejects(
+        service2.get(0),
+        "get rejects"
+      );
+    });
+  
+    it("notify with no method", async function() {
+      let cbCount = 0;
+      const methods: MethodName[] = ["create", "update", "patch", "remove"];
+      const { service } = mock(methods, {
+        subscriptions: [{
+          service: "tests"
+        }],
+        notify: () => {
+          cbCount++;
+        }
+      });
+  
+      await service.create({ id: 0, test: true });
+      assert.strictEqual(cbCount, 1, "notify cb was called");
+  
+      await service.update(0, { id: 0, test: false });
+      assert.strictEqual(cbCount, 2, "notify cb was called");
+  
+      await service.patch(0, { test: true });
+      assert.strictEqual(cbCount, 3, "notify cb was called");
+  
+      await service.remove(0);
+      assert.strictEqual(cbCount, 4, "notify cb was called");
+    });
+  
+    it("notify with no service", async function() {
+      let cbCount = 0;
+      const methods: MethodName[] = ["create", "update", "patch", "remove"];
+      const { service } = mock(methods, {
+        subscriptions: [{
+          method: methods
+        }],
+        notify: () => {
+          cbCount++;
+        }
+      });
+  
+      await service.create({ id: 0, test: true });
+      assert.strictEqual(cbCount, 1, "notify cb was called");
+  
+      await service.update(0, { id: 0, test: false });
+      assert.strictEqual(cbCount, 2, "notify cb was called");
+  
+      await service.patch(0, { test: true });
+      assert.strictEqual(cbCount, 3, "notify cb was called");
+  
+      await service.remove(0);
+      assert.strictEqual(cbCount, 4, "notify cb was called");
+    });
+  
+    it("notify with no method and no service", async function() {
+      let cbCount = 0;
+      const methods: MethodName[] = ["create", "update", "patch", "remove"];
+      const { service } = mock(methods, {
+        subscriptions: [{}],
+        notify: () => {
+          cbCount++;
+        }
+      });
+  
+      await service.create({ id: 0, test: true });
+      assert.strictEqual(cbCount, 1, "notify cb was called");
+  
+      await service.update(0, { id: 0, test: false });
+      assert.strictEqual(cbCount, 2, "notify cb was called");
+  
+      await service.patch(0, { test: true });
+      assert.strictEqual(cbCount, 3, "notify cb was called");
+  
+      await service.remove(0);
+      assert.strictEqual(cbCount, 4, "notify cb was called");
+    });
+  
+    it("notify with method as array", async function() {
+      let cbCount = 0;
+      const methods: MethodName[] = ["create", "update", "patch", "remove"];
+      const { service } = mock(methods, {
+        subscriptions: [{
+          method: methods,
+          service: "tests"
+        }],
+        notify: () => {
+          cbCount++;
+        }
+      });
+  
+      await service.create({ id: 0, test: true });
+      assert.strictEqual(cbCount, 1, "notify cb was called");
+  
+      await service.update(0, { id: 0, test: false });
+      assert.strictEqual(cbCount, 2, "notify cb was called");
+  
+      await service.patch(0, { test: true });
+      assert.strictEqual(cbCount, 3, "notify cb was called");
+  
+      await service.remove(0);
+      assert.strictEqual(cbCount, 4, "notify cb was called");
+    });
+  
+    it("notify with service as array", async function() {
+      let cbCount = 0;
+      const methods: MethodName[] = ["create", "update", "patch", "remove"];
+      const { service } = mock(methods, {
+        subscriptions: [{
+          method: methods,
+          service: ["tests", "tests2", "tests3"]
+        }],
+        notify: () => {
+          cbCount++;
+        }
+      });
+  
+      await service.create({ id: 0, test: true });
+      assert.strictEqual(cbCount, 1, "notify cb was called");
+  
+      await service.update(0, { id: 0, test: false });
+      assert.strictEqual(cbCount, 2, "notify cb was called");
+  
+      await service.patch(0, { test: true });
+      assert.strictEqual(cbCount, 3, "notify cb was called");
+  
+      await service.remove(0);
+      assert.strictEqual(cbCount, 4, "notify cb was called");
     });
 
-    await service.create({ id: 0, test: true });
-    assert.strictEqual(cbCount, 1, "notify cb was called");
-
-    await service.update(0, { id: 0, test: false });
-    assert.strictEqual(cbCount, 2, "notify cb was called");
-
-    await service.patch(0, { test: true });
-    assert.strictEqual(cbCount, 3, "notify cb was called");
-
-    await service.remove(0);
-    assert.strictEqual(cbCount, 4, "notify cb was called");
-  });
-
-  it("notify with service as array", async function() {
-    let cbCount = 0;
-    const methods: MethodName[] = ["create", "update", "patch", "remove"];
-    const { service } = mock(methods, {
-      subscriptions: [{
-        method: methods,
-        service: ["tests", "tests2", "tests3"]
-      }],
-      notify: () => {
-        cbCount++;
-      }
+    it("use notify of subscription over notify on hook", async function() {
+      let cbCount = 0;
+      let cbInnerCount = 0;
+      const methods: MethodName[] = ["create", "update", "patch", "remove"];
+      const { service } = mock(methods, {
+        subscriptions: [{
+          method: methods,
+          service: ["tests", "tests2", "tests3"],
+          notify: () => {
+            cbInnerCount++;
+          }
+        }],
+        notify: () => {
+          cbCount++;
+        }
+      });
+  
+      await service.create({ id: 0, test: true });
+      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbInnerCount, 1, "notify of sub cb was called");
+  
+      await service.update(0, { id: 0, test: false });
+      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbInnerCount, 2, "notify of sub cb was called");
+  
+      await service.patch(0, { test: true });
+      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbInnerCount, 3, "notify of sub cb was called");
+  
+      await service.remove(0);
+      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbInnerCount, 4, "notify of sub cb was called");
     });
-
-    await service.create({ id: 0, test: true });
-    assert.strictEqual(cbCount, 1, "notify cb was called");
-
-    await service.update(0, { id: 0, test: false });
-    assert.strictEqual(cbCount, 2, "notify cb was called");
-
-    await service.patch(0, { test: true });
-    assert.strictEqual(cbCount, 3, "notify cb was called");
-
-    await service.remove(0);
-    assert.strictEqual(cbCount, 4, "notify cb was called");
   });
 
   describe("create", function() {
@@ -177,7 +318,7 @@ describe("notify", function() {
     it("create: notify on single create with subscriptions function without condition", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
-        subscriptions: async () => {
+        subscriptions: () => {
           return [{
             method: "create",
             service: "tests"
@@ -247,7 +388,7 @@ describe("notify", function() {
         subscriptions: [{
           method: "create",
           service: "tests",
-          conditions: { id: 1 }
+          conditionsResult: { id: 1 }
         }],
         notify: (item) => {
           cbCount++;
@@ -268,7 +409,7 @@ describe("notify", function() {
         subscriptions: [{
           method: "create",
           service: "tests",
-          conditions: { count: { $gt: "{{ criticalValue }}" } },
+          conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
           view: { criticalValue: 10 }
         }],
         notify: (item) => {
@@ -389,7 +530,7 @@ describe("notify", function() {
         subscriptions: [{
           method: "update",
           service: "tests",
-          conditions: { count: { $gt: "{{ criticalValue }}" } },
+          conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
           view: { criticalValue: 10 }
         }],
         notify: () => {
@@ -496,7 +637,7 @@ describe("notify", function() {
         subscriptions: [{
           method: "patch",
           service: "tests",
-          conditions: { date: { $lt: "{{ before.date }}" } }
+          conditionsResult: { date: { $lt: "{{ before.date }}" } }
         }],
         notify: () => {
           cbCount++;
@@ -521,7 +662,7 @@ describe("notify", function() {
         subscriptions: [{
           method: "patch",
           service: "tests",
-          conditions: { count: { $gt: "{{ criticalValue }}" } },
+          conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
           view: { criticalValue: 10 }
         }],
         notify: () => {
@@ -607,7 +748,7 @@ describe("notify", function() {
         subscriptions: [{
           method: "remove",
           service: "tests",
-          conditions: { count: { $gt: "{{ criticalValue }}" } },
+          conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
           view: { criticalValue: 10 }
         }],
         notify: () => {

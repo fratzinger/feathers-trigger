@@ -41,7 +41,7 @@ export const beforeHook = async (
 ): Promise<HookContext> => {
   if (
     Array.isArray(options.subscriptions) && 
-    !subscriptionsForMethod(options.subscriptions, context.path, context.method).length
+    !getSubsForMethod(options.subscriptions, context.path, context.method).length
   ) {
     return context;
   }
@@ -74,11 +74,13 @@ export const afterHook = async (
 
   if (!changesById) { return context; }
 
-  const subscriptions = (typeof options.subscriptions === "function")
+  const _subscriptions = (typeof options.subscriptions === "function")
     ? await options.subscriptions(context, Object.values(changesById))
     : options.subscriptions;
 
-  const subs = subscriptionsForMethod(subscriptions, context.path, context.method);
+  const subscriptions = (Array.isArray(_subscriptions)) ? _subscriptions : [_subscriptions];
+
+  const subs = getSubsForMethod(subscriptions, context.path, context.method);
 
   if (!subs?.length) { return context; }
 
@@ -94,8 +96,8 @@ export const afterHook = async (
     const { before } = change;
     
     for (let sub of subs) {
-      let { 
-        conditions, 
+      const { 
+        conditionsResult, 
         conditionsBefore
       } = sub;
 
@@ -103,7 +105,7 @@ export const afterHook = async (
 
       let changeForSub = change;
 
-      if (conditions || conditionsBefore || sub.params || sub.view) {
+      if (conditionsResult || conditionsBefore || sub.params || sub.view) {
         sub = _cloneDeep(sub);
       }
 
@@ -144,24 +146,20 @@ export const afterHook = async (
         }
       }
 
-      if (conditions !== undefined && conditions !== true) {
-        conditions = transformMustache(conditions, mustacheView);
-      }
+      const conditionsResultNew = testCondition(mustacheView, item, conditionsResult);
+      if (conditionsResultNew === false) { continue; }
 
-      if (conditionsBefore !== undefined && conditionsBefore !== true) {
-        conditionsBefore = transformMustache(conditionsBefore, mustacheView);
-      }
-      
-      const areConditionsFulFilled = conditions === undefined || conditions === true || sift(conditions)(item);
-      const areConditionsBeforeFulFilled = conditionsBefore === undefined || conditionsBefore === true || sift(conditionsBefore)(before);
+      const conditionsBeforeNew = testCondition(mustacheView, before, conditionsBefore);
+      if (conditionsBeforeNew === false) { continue; }
 
-      if (!areConditionsFulFilled || !areConditionsBeforeFulFilled) {
-        continue;
-      }
+      sub = Object.assign({}, sub, { 
+        conditionsBefore: conditionsBeforeNew,
+        conditionsResult: conditionsResultNew
+      });
 
-      sub = Object.assign({}, sub, { conditionsBefore, conditions });
+      const notify = sub.notify || options.notify;
 
-      promises.push(options.notify(changeForSub, sub, changes, context));
+      promises.push(notify(changeForSub, sub, changes, context));
     }
   }
 
@@ -172,7 +170,7 @@ export const afterHook = async (
   return context;
 };
 
-const subscriptionsForMethod = (
+const getSubsForMethod = (
   subscriptions: Subscription[], 
   servicePath: string, 
   method: string
@@ -188,6 +186,24 @@ const subscriptionsForMethod = (
     ) { return false; }
     return true;
   });
+};
+
+const testCondition = (
+  mustacheView: Record<string, unknown>,
+  item: unknown,
+  conditions?: true | Record<string, unknown>,
+): undefined | boolean | Record<string, unknown> => {
+  if (conditions !== undefined && conditions !== true) {
+    conditions = transformMustache(conditions, mustacheView);
+  }
+  
+  const areConditionsFulFilled = conditions === undefined || conditions === true || sift(conditions)(item);
+
+  if (!areConditionsFulFilled) {
+    return false;
+  }
+  
+  return conditions;
 };
 
 const getIdField = (context: Pick<HookContext, "service">): string => {

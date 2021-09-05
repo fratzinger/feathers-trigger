@@ -4,34 +4,34 @@ import { Service } from "feathers-memory";
 import feathers from "@feathersjs/feathers";
 import { HookChangesByIdOptions } from "../../lib/types";
 
+function mock(cb, hookName, options?: Partial<HookChangesByIdOptions>, beforeHook?, afterHook?) {
+  const app = feathers();
+  app.use("/test", new Service());
+  const service = app.service("test");
+  const hook = changesById(cb, options);
+
+  const beforeAll = [hook];
+  if (beforeHook) { beforeAll.push(beforeHook); }
+
+  const afterAll = [hook];
+  if (afterHook) { afterAll.push(afterHook); }
+
+  service.hooks({
+    before: {
+      [hookName]: beforeAll,
+    },
+    after: {
+      [hookName]: afterAll
+    }
+  });
+  
+  return { 
+    app, 
+    service 
+  };
+}
+
 describe("hook - changesById", function() {
-  function mock(cb, hookName, options?: Partial<HookChangesByIdOptions>, beforeHook?, afterHook?) {
-    const app = feathers();
-    app.use("/test", new Service());
-    const service = app.service("test");
-    const hook = changesById(cb, options);
-
-    const beforeAll = [hook];
-    if (beforeHook) { beforeAll.push(beforeHook); }
-
-    const afterAll = [hook];
-    if (afterHook) { afterAll.push(afterHook); }
-
-    service.hooks({
-      before: {
-        [hookName]: beforeAll,
-      },
-      after: {
-        [hookName]: afterAll
-      }
-    });
-    
-    return { 
-      app, 
-      service 
-    };
-  }
-
   describe("general", function() {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     it.skip("can transform params", function() {});
