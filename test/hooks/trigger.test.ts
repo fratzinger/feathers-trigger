@@ -256,7 +256,7 @@ describe("hook - trigger", function() {
       });
 
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
     it("create: does not notify with method mismatch", async function() {
@@ -270,7 +270,7 @@ describe("hook - trigger", function() {
       });
 
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
     it("create: notify on single create with condition", async function() {
@@ -286,7 +286,7 @@ describe("hook - trigger", function() {
       });
 
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.create({ id: 1, test: true });
       assert.strictEqual(cbCount, 1, "callAction cb was called");
@@ -306,7 +306,7 @@ describe("hook - trigger", function() {
       });
 
       await service.create({ id: 0, test: true, count: 9 });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.create({ id: 1, test: true, count: 12 });
       assert.strictEqual(cbCount, 1, "callAction cb was called");
@@ -365,7 +365,7 @@ describe("hook - trigger", function() {
       });
 
       await service.create({ id: 0, test: false });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.create({ id: 1, test: true });
       assert.strictEqual(cbCount, 1, "callAction cb was called");
@@ -385,7 +385,7 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.update(item.id, { ...item, test: false });
       assert.strictEqual(cbCount, 1, "callAction cb was called");
@@ -402,10 +402,10 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.update(item.id, { ...item, test: false });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
     it("update: does not notify with method mismatch", async function() {
@@ -419,10 +419,10 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.update(item.id, { ...item, test: false });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
     it("update: notify with custom view", async function() {
@@ -443,7 +443,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
 
       await service.update(item.id, { id: 0, test: true, count: 9 });
-      assert.strictEqual(cbCount, 1, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 1, "callAction cb wasn't called");
 
       await service.update(item.id, { id: 0, test: true, count: 13 });
       assert.strictEqual(cbCount, 2, "callAction cb was called");
@@ -463,7 +463,7 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.patch(item.id, { test: false });
       assert.strictEqual(cbCount, 1, "callAction cb was called");
@@ -480,10 +480,10 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.patch(item.id, { test: false });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
     it("patch: does not notify with method mismatch", async function() {
@@ -497,10 +497,10 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.patch(item.id, { test: false });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
     it("patch: does not notify with empty result", async function() {
@@ -516,10 +516,10 @@ describe("hook - trigger", function() {
       await service.create({ id: 0, test: true });
       await service.create({ id: 0, test: true });
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.patch(null, { test: true }, { query: { test: false } });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
     it("patch: notify if date is before new date", async function() {
@@ -539,7 +539,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
 
       await service.patch(item.id, { date: addDays(new Date(), 5) });
-      assert.strictEqual(cbCount, 1, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 1, "callAction cb wasn't called");
 
       await service.patch(item.id, { date: addDays(new Date(), -1) });
       assert.strictEqual(cbCount, 2, "callAction cb was called");
@@ -563,7 +563,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
 
       await service.patch(item.id, { count: 9 });
-      assert.strictEqual(cbCount, 1, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 1, "callAction cb wasn't called");
 
       await service.patch(item.id, { count: 13 });
       assert.strictEqual(cbCount, 2, "callAction cb was called");
@@ -583,7 +583,7 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.remove(item.id);
       assert.strictEqual(cbCount, 1, "callAction cb was called");
@@ -600,10 +600,10 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.remove(item.id);
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
     it("remove: does not notify with method mismatch", async function() {
@@ -617,10 +617,10 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.remove(item.id);
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
     it("remove: notify with custom view", async function() {
@@ -636,7 +636,7 @@ describe("hook - trigger", function() {
       });
 
       const item = await service.create({ id: 0, test: true, count: 12 });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
 
       await service.remove(item.id);
       assert.strictEqual(cbCount, 1, "callAction cb was called");
