@@ -31,11 +31,7 @@ interface ViewContext<T = unknown> {
 
 type Notify<T = unknown> = (item: Change<T>, subscription: Subscription, items: Change<T>[], context: HookContext) => (Promisable<void>);
 
-export interface HookNotifyOptions<T> {
-  subscriptions: Subscription | Subscription[] | ((context: HookContext, items: Change<T>[]) => Promisable<Subscription | Subscription[]>)
-  notify: Notify<T>
-  isBlocking?: boolean
-}
+export type HookNotifyOptions = Subscription | Subscription[] | ((context: HookContext) => Promisable<Subscription | Subscription[]>)
 
 export type TransformView<T = unknown> = 
   undefined | 
@@ -55,7 +51,8 @@ export interface Subscription {
   conditionsBefore?: true | Record<string, unknown>
   view?: TransformView
   params?: TransformParams
-  notify?: Notify
+  isBlocking?: boolean
+  notify: Notify
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

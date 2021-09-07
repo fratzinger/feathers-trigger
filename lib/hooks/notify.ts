@@ -5,22 +5,11 @@ import { changesByIdBefore, changesByIdAfter } from "./changesById";
 import transformMustache from "../utils/transformMustache";
 import sift from "sift";
 import _cloneDeep from "lodash/cloneDeep";
-import type { SetRequired } from "type-fest";
-
-const defaultOptions: HookNotifyOptions<unknown> = {
-  notify: undefined,
-  subscriptions: undefined,
-  isBlocking: false
-};
 
 const notify = (
-  options: SetRequired<HookNotifyOptions<unknown>, "notify" | "subscriptions">
+  options: HookNotifyOptions
 ): ((context: HookContext) => Promise<HookContext>) => {
-  if (!options.notify || typeof options.notify !== "function") { 
-    throw new Error("You should define a notify function");
-  }
-
-  if (!options.subscriptions) { 
+  if (!options) { 
     throw new Error("You should define subscriptions");
   }
 
@@ -30,36 +19,48 @@ const notify = (
     if (context.type === "before") {
       return await beforeHook(context, options);
     } else if (context.type === "after") {
-      return await afterHook(context, options);
+      return await afterHook(context);
     }
   };
 };
 
 export const beforeHook = async (
   context: HookContext, 
-  options: HookNotifyOptions<unknown>
+  options: HookNotifyOptions
 ): Promise<HookContext> => {
-  if (
-    Array.isArray(options.subscriptions) && 
-    !getSubsForMethod(options.subscriptions, context.path, context.method).length
-  ) {
-    return context;
+  let subs = await getSubscriptions(context, options);
+
+  if (!subs?.length) { return context; }
+
+  if (!Array.isArray(context.data)) {
+    subs = subs.reduce((result: Subscription[], sub) => {
+      //@ts-expect-error context is not Record<string, unknown>
+      const conditionsData = testCondition(context, context.data, sub.conditionsData);
+      if (conditionsData === false) { return result; }
+
+      sub = (conditionsData)
+        ? Object.assign({}, sub, { conditionsData })
+        : sub;
+
+      result.push(sub);
+      return result;
+    }, []);
   }
 
+  if (!subs?.length) { return context; }
+
   await changesByIdBefore(context, { skipHooks: false });
+
+  setConfig(context, "subscriptions", subs);
 
   return context;
 };
 
 export const afterHook = async (
-  context: HookContext, 
-  _options: HookNotifyOptions<unknown>
-): Promise<HookContext> => {
-  const options: HookNotifyOptions<unknown> = Object.assign(
-    {},
-    defaultOptions,
-    _options
-  );
+  context: HookContext
+): Promise<HookContext> => {  
+  const subs = getConfig(context, "subscriptions");
+  if (!subs?.length) { return context;}
 
   await changesByIdAfter(
     context, 
@@ -70,27 +71,13 @@ export const afterHook = async (
     }
   );
 
-  const changesById: ChangesById = context.params?.changesById;
-
-  if (!changesById) { return context; }
-
-  const _subscriptions = (typeof options.subscriptions === "function")
-    ? await options.subscriptions(context, Object.values(changesById))
-    : options.subscriptions;
-
-  const subscriptions = (Array.isArray(_subscriptions)) ? _subscriptions : [_subscriptions];
-
-  const subs = getSubsForMethod(subscriptions, context.path, context.method);
-
-  if (!subs?.length) { return context; }
-
-  const changes = Object.values(changesById);
-
-  if (!changes?.length) { return context; }
-
   const now = new Date();
 
   const promises = [];
+
+  const changesById: ChangesById = context.params?.changesById;
+  if (!changesById) { return context; }
+  const changes = Object.values(changesById);
 
   for (const change of changes) {
     const { before } = change;
@@ -125,7 +112,7 @@ export const afterHook = async (
 
       if (sub.params) {
         const params = (typeof sub.params === "function")
-          ? sub.params(change, sub, changes, subscriptions)
+          ? sub.params(change, sub, changes, subs)
           : sub.params;
 
         if (params) {
@@ -140,7 +127,7 @@ export const afterHook = async (
 
       if (sub.view) {
         if (typeof sub.view === "function") {
-          mustacheView = await sub.view(mustacheView, { item: changeForSub, items: changes, subscription: sub, subscriptions, context });
+          mustacheView = await sub.view(mustacheView, { item: changeForSub, items: changes, subscription: sub, subscriptions: subs, context });
         } else {
           mustacheView = Object.assign(mustacheView, sub.view);
         }
@@ -157,28 +144,62 @@ export const afterHook = async (
         conditionsResult: conditionsResultNew
       });
 
-      const notify = sub.notify || options.notify;
+      const promise = sub.notify(changeForSub, sub, changes, context);
 
-      promises.push(notify(changeForSub, sub, changes, context));
+      if (sub.isBlocking) {
+        promises.push(promise);
+      }
     }
   }
 
-  if (options.isBlocking) {
-    await Promise.all(promises);
-  }
+  await Promise.all(promises);
         
   return context;
 };
 
-const getSubsForMethod = (
-  subscriptions: Subscription[], 
-  servicePath: string, 
-  method: string
-): Subscription[] => {
+function setConfig (context: HookContext, key: "subscriptions", val: Subscription[]): void
+function setConfig (context: HookContext, key: string, val: unknown) {
+  context.params.trigger = context.params.trigger || {};
+  context.params.trigger[key] = val;
+}
+
+function getConfig (context: HookContext, key: "subscriptions"): undefined | Subscription[] 
+function getConfig (context: HookContext, key: string) {
+  return context.params.trigger?.[key];
+}
+
+const defaultSubscription: Subscription = {
+  notify: undefined,
+  conditionsBefore: undefined,
+  conditionsData: undefined,
+  conditionsResult: undefined,
+  isBlocking: true,
+  method: undefined,
+  params: undefined,
+  service: undefined,
+  view: undefined
+};
+
+const getSubscriptions = async (
+  context: HookContext,
+  options: HookNotifyOptions
+): Promise<undefined | Subscription[]> => {
+  const _subscriptions = (typeof options === "function")
+    ? await options(context)
+    : options;
+
+  if (!_subscriptions) { return; }
+
+  let subscriptions = (Array.isArray(_subscriptions)) ? _subscriptions : [_subscriptions];
+
+  subscriptions = subscriptions.map(x => Object.assign({}, defaultSubscription, x));
+
+  const { path, method } = context;
+
   return subscriptions.filter(sub => {
     if (
-      (typeof sub.service === "string" && sub.service !== servicePath) || 
-      (Array.isArray(sub.service) && !sub.service.includes(servicePath))
+      (typeof sub.service === "string" && sub.service !== path) || 
+      (Array.isArray(sub.service) && !sub.service.includes(path))
     ) { return false; }
     if (
       (typeof sub.method === "string" && sub.method !== method) ||

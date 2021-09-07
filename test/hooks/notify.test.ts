@@ -8,7 +8,7 @@ import { addDays } from "date-fns";
 
 function mock(
   hookNames: MethodName | MethodName[], 
-  options?: HookNotifyOptions<unknown>, 
+  options: HookNotifyOptions, 
   beforeHook?: (context: HookContext) => Promise<HookContext>, 
   afterHook?: (context: HookContext) => Promise<HookContext>
 ) {
@@ -48,70 +48,18 @@ describe("notify", function() {
       assert.doesNotThrow(
         //@ts-ignore
         () => mock("create", {
-          subscriptions: [],
           // eslint-disable-next-line @typescript-eslint/no-empty-function
           notify: () => {}
         }),
         "passes"
       );
     });
-  
-    it("throws if no notify function is defined", function() {
-      assert.throws(
-        //@ts-ignore
-        () => mock("create", {
-          subscriptions: [{
-            method: "create",
-            service: "tests"
-          }]
-        }),
-        "throws without"
-      );
-  
-      assert.throws(
-        () => mock("create", {
-          subscriptions: [{
-            method: "create",
-            service: "tests"
-          }],
-          //@ts-ignore
-          notify: {}
-        }),
-        "throws with object"
-      );
-    });
-  
-    it("throws if no subscriptions are defined", function() {
-      assert.throws(
-        //@ts-ignore
-        () => mock("create", {
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
-          notify: () => {}
-        }),
-        "throws"
-      );
-    });
-  
-    it("throws if has no notify function", function() {
-      assert.throws(
-        //@ts-ignore
-        () => mock("create", {
-          subscriptions: [{
-            method: "create",
-            service: "tests"
-          }]
-        }),
-        "throws"
-      );
-    });
 
     it("throws on find and get", async function() {
       // @ts-expect-error find is not allowed;
       const { service: service1 } = mock("find", {
-        subscriptions: [{
-          method: "create",
-          service: "tests"
-        }],
+        method: "create",
+        service: "tests",
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         notify: () => {}
       });
@@ -123,10 +71,8 @@ describe("notify", function() {
 
       // @ts-expect-error find is not allowed;
       const { service: service2 } = mock("get", {
-        subscriptions: [{
-          method: "create",
-          service: "tests"
-        }],
+        method: "create",
+        service: "tests",
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         notify: () => {}
       });
@@ -141,9 +87,7 @@ describe("notify", function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
-        subscriptions: [{
-          service: "tests"
-        }],
+        service: "tests",
         notify: () => {
           cbCount++;
         }
@@ -166,9 +110,7 @@ describe("notify", function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
-        subscriptions: [{
-          method: methods
-        }],
+        method: methods,
         notify: () => {
           cbCount++;
         }
@@ -191,7 +133,6 @@ describe("notify", function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
-        subscriptions: [{}],
         notify: () => {
           cbCount++;
         }
@@ -214,10 +155,8 @@ describe("notify", function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
-        subscriptions: [{
-          method: methods,
-          service: "tests"
-        }],
+        method: methods,
+        service: "tests",
         notify: () => {
           cbCount++;
         }
@@ -240,10 +179,8 @@ describe("notify", function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
-        subscriptions: [{
-          method: methods,
-          service: ["tests", "tests2", "tests3"]
-        }],
+        method: methods,
+        service: ["tests", "tests2", "tests3"],
         notify: () => {
           cbCount++;
         }
@@ -261,50 +198,14 @@ describe("notify", function() {
       await service.remove(0);
       assert.strictEqual(cbCount, 4, "notify cb was called");
     });
-
-    it("use notify of subscription over notify on hook", async function() {
-      let cbCount = 0;
-      let cbInnerCount = 0;
-      const methods: MethodName[] = ["create", "update", "patch", "remove"];
-      const { service } = mock(methods, {
-        subscriptions: [{
-          method: methods,
-          service: ["tests", "tests2", "tests3"],
-          notify: () => {
-            cbInnerCount++;
-          }
-        }],
-        notify: () => {
-          cbCount++;
-        }
-      });
-  
-      await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
-      assert.strictEqual(cbInnerCount, 1, "notify of sub cb was called");
-  
-      await service.update(0, { id: 0, test: false });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
-      assert.strictEqual(cbInnerCount, 2, "notify of sub cb was called");
-  
-      await service.patch(0, { test: true });
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
-      assert.strictEqual(cbInnerCount, 3, "notify of sub cb was called");
-  
-      await service.remove(0);
-      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
-      assert.strictEqual(cbInnerCount, 4, "notify of sub cb was called");
-    });
   });
 
   describe("create", function() {
     it("create: notify on single create without condition", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
-        subscriptions: [{
-          method: "create",
-          service: "tests"
-        }],
+        method: "create",
+        service: "tests",
         notify: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: undefined, item: { id: 0, test: true } });
@@ -317,18 +218,14 @@ describe("notify", function() {
 
     it("create: notify on single create with subscriptions function without condition", async function() {
       let cbCount = 0;
-      const { service } = mock("create", {
-        subscriptions: () => {
-          return [{
-            method: "create",
-            service: "tests"
-          }];
-        },
+      const { service } = mock("create", () => ({
+        method: "create",
+        service: "tests",
         notify: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: undefined, item: { id: 0, test: true } });
         }
-      });
+      }));
 
       await service.create({ id: 0, test: true });
       assert.strictEqual(cbCount, 1, "notify cb was called");
@@ -337,10 +234,8 @@ describe("notify", function() {
     it("create: notify on multi create without condition", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
-        subscriptions: [{
-          method: "create",
-          service: "tests"
-        }],
+        method: "create",
+        service: "tests",
         notify: () => {
           cbCount++;
         }
@@ -353,10 +248,8 @@ describe("notify", function() {
     it("create: does not notify with service mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
-        subscriptions: [{
-          method: "create",
-          service: "supertests"
-        }],
+        method: "create",
+        service: "supertests",
         notify: () => {
           cbCount++;
         }
@@ -369,10 +262,8 @@ describe("notify", function() {
     it("create: does not notify with method mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
-        subscriptions: [{
-          method: "update",
-          service: "tests"
-        }],
+        method: "update",
+        service: "tests",
         notify: () => {
           cbCount++;
         }
@@ -385,11 +276,9 @@ describe("notify", function() {
     it("create: notify on single create with condition", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
-        subscriptions: [{
-          method: "create",
-          service: "tests",
-          conditionsResult: { id: 1 }
-        }],
+        method: "create",
+        service: "tests",
+        conditionsResult: { id: 1 },
         notify: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true } });
@@ -406,12 +295,10 @@ describe("notify", function() {
     it("create: notify on single create with custom view", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
-        subscriptions: [{
-          method: "create",
-          service: "tests",
-          conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
-          view: { criticalValue: 10 }
-        }],
+        method: "create",
+        service: "tests",
+        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        view: { criticalValue: 10 },
         notify: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, count: 12 } });
@@ -427,41 +314,61 @@ describe("notify", function() {
 
     it("create: notify on single create with custom param", async function() {
       let cbCount = 0;
+      const notify = (item, sub) => {
+        cbCount++;
+        if (sub.id === 1) {
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 1 } }, "correct item for sub1");
+        } else if (sub.id === 2) {
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true } }, "correct item for sub2");
+        } else if (sub.id === 3) {
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, comment: "yippieh" } }, "correct item for sub3");
+        } else {
+          assert.fail("should not get here");
+        }
+      };
+
       const sub1 = {
         id: 1,
         method: "create",
         service: "tests",
-        params: { query: { $select: ["id"] } }
+        params: { query: { $select: ["id"] } },
+        notify
       };
       const sub2 = {
         id: 2,
         method: "create",
         service: "tests",
-        params: { query: { $select: ["id", "test"] } }
+        params: { query: { $select: ["id", "test"] } },
+        notify
       };
       const sub3 = {
         id: 3,
         method: "create",
-        service: "tests"
+        service: "tests",
+        notify
       };
-      const { service } = mock("create", {
-        subscriptions: [sub1, sub2, sub3],
-        notify: (item, sub) => {
-          cbCount++;
-          if (sub.id === 1) {
-            assert.deepStrictEqual(item, { before: undefined, item: { id: 1 } }, "correct item for sub1");
-          } else if (sub.id === 2) {
-            assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true } }, "correct item for sub2");
-          } else if (sub.id === 3) {
-            assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, comment: "yippieh" } }, "correct item for sub3");
-          } else {
-            assert.fail("should not get here");
-          }
-        }
-      });
+      const { service } = mock("create", [sub1, sub2, sub3]);
 
       await service.create({ id: 1, test: true, comment: "yippieh" });
       assert.strictEqual(cbCount, 3);
+    });
+
+    it("create: notify on single create with conditionsData", async function() {
+      let cbCount = 0;
+      const { service } = mock("create", {
+        method: "create",
+        service: "tests",
+        conditionsData: { test: true },
+        notify: () => {
+          cbCount++;
+        }
+      });
+
+      await service.create({ id: 0, test: false });
+      assert.strictEqual(cbCount, 0, "notify cb wasn't called");
+
+      await service.create({ id: 1, test: true });
+      assert.strictEqual(cbCount, 1, "notify cb was called");
     });
   });
 
@@ -469,10 +376,8 @@ describe("notify", function() {
     it("update: notify on single update without condition", async function() {
       let cbCount = 0;
       const { service } = mock("update", {
-        subscriptions: [{
-          method: "update",
-          service: "tests"
-        }],
+        method: "update",
+        service: "tests",
         notify: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: { id: 0, test: true }, item: { id: 0, test: false } });
@@ -489,10 +394,8 @@ describe("notify", function() {
     it("update: does not notify with service mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("update", {
-        subscriptions: [{
-          method: "update",
-          service: "supertests"
-        }],
+        method: "update",
+        service: "supertests",
         notify: () => {
           cbCount++;
         }
@@ -508,10 +411,8 @@ describe("notify", function() {
     it("update: does not notify with method mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("update", {
-        subscriptions: [{
-          method: "patch",
-          service: "tests"
-        }],
+        method: "patch",
+        service: "tests",
         notify: () => {
           cbCount++;
         }
@@ -527,12 +428,10 @@ describe("notify", function() {
     it("update: notify with custom view", async function() {
       let cbCount = 0;
       const { service } = mock("update", {
-        subscriptions: [{
-          method: "update",
-          service: "tests",
-          conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
-          view: { criticalValue: 10 }
-        }],
+        method: "update",
+        service: "tests",
+        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        view: { criticalValue: 10 },
         notify: () => {
           cbCount++;
         }
@@ -555,10 +454,8 @@ describe("notify", function() {
     it("patch: notify on single patch without condition", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
-        subscriptions: [{
-          method: "patch",
-          service: "tests"
-        }],
+        method: "patch",
+        service: "tests",
         notify: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: { id: 0, test: true }, item: { id: 0, test: false } });
@@ -575,10 +472,8 @@ describe("notify", function() {
     it("patch: does not notify with service mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
-        subscriptions: [{
-          method: "patch",
-          service: "supertests"
-        }],
+        method: "patch",
+        service: "supertests",
         notify: () => {
           cbCount++;
         }
@@ -594,10 +489,8 @@ describe("notify", function() {
     it("patch: does not notify with method mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
-        subscriptions: [{
-          method: "update",
-          service: "tests"
-        }],
+        method: "update",
+        service: "tests",
         notify: () => {
           cbCount++;
         }
@@ -613,10 +506,8 @@ describe("notify", function() {
     it("patch: does not notify with empty result", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
-        subscriptions: [{
-          method: "patch",
-          service: "tests"
-        }],
+        method: "patch",
+        service: "tests",
         notify: () => {
           cbCount++;
         }
@@ -634,11 +525,9 @@ describe("notify", function() {
     it("patch: notify if date is before new date", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
-        subscriptions: [{
-          method: "patch",
-          service: "tests",
-          conditionsResult: { date: { $lt: "{{ before.date }}" } }
-        }],
+        method: "patch",
+        service: "tests",
+        conditionsResult: { date: { $lt: "{{ before.date }}" } },
         notify: () => {
           cbCount++;
         }
@@ -659,12 +548,10 @@ describe("notify", function() {
     it("patch: notify with custom view", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
-        subscriptions: [{
-          method: "patch",
-          service: "tests",
-          conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
-          view: { criticalValue: 10 }
-        }],
+        method: "patch",
+        service: "tests",
+        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        view: { criticalValue: 10 },
         notify: () => {
           cbCount++;
         }
@@ -687,10 +574,8 @@ describe("notify", function() {
     it("remove: notify on single remove without condition", async function() {
       let cbCount = 0;
       const { service } = mock("remove", {
-        subscriptions: [{
-          method: "remove",
-          service: "tests"
-        }],
+        method: "remove",
+        service: "tests",
         notify: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: { id: 0, test: true }, item: { id: 0, test: true } });
@@ -707,10 +592,8 @@ describe("notify", function() {
     it("remove: does not notify with service mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("remove", {
-        subscriptions: [{
-          method: "remove",
-          service: "supertests"
-        }],
+        method: "remove",
+        service: "supertests",
         notify: () => {
           cbCount++;
         }
@@ -726,10 +609,8 @@ describe("notify", function() {
     it("remove: does not notify with method mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("remove", {
-        subscriptions: [{
-          method: "update",
-          service: "tests"
-        }],
+        method: "update",
+        service: "tests",
         notify: () => {
           cbCount++;
         }
@@ -745,12 +626,10 @@ describe("notify", function() {
     it("remove: notify with custom view", async function() {
       let cbCount = 0;
       const { service } = mock("remove", {
-        subscriptions: [{
-          method: "remove",
-          service: "tests",
-          conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
-          view: { criticalValue: 10 }
-        }],
+        method: "remove",
+        service: "tests",
+        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        view: { criticalValue: 10 },
         notify: () => {
           cbCount++;
         }

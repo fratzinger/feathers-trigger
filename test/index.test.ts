@@ -10,7 +10,8 @@ describe("index", function() {
     assert.ok(notify, "exports notify hook");
     assert.ok(changesById, "exports changesById hook");
     
-    const sub: Subscription = { method: "create", service: "tests" };
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const sub: Subscription = { method: "create", service: "tests", notify: () => {} };
     assert.ok(sub, "exports types");
   });
 });
