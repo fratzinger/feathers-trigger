@@ -29,9 +29,9 @@ interface ViewContext<T = unknown> {
   context: HookContext
 }
 
-type Notify<T = unknown> = (item: Change<T>, subscription: Subscription, items: Change<T>[], context: HookContext) => (Promisable<void>);
+export type CallAction<T = unknown> = (item: Change<T>, subscription: Subscription, items: Change<T>[], context: HookContext) => (Promisable<void>);
 
-export type HookNotifyOptions = Subscription | Subscription[] | ((context: HookContext) => Promisable<Subscription | Subscription[]>)
+export type HookTriggerOptions = Subscription | Subscription[] | ((context: HookContext) => Promisable<Subscription | Subscription[]>)
 
 export type TransformView<T = unknown> = 
   undefined | 
@@ -52,7 +52,7 @@ export interface Subscription {
   view?: TransformView
   params?: TransformParams
   isBlocking?: boolean
-  notify: Notify
+  callAction: CallAction
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

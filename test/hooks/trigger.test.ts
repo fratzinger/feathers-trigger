@@ -1,14 +1,14 @@
 import assert from "assert";
-import notify from "../../lib/hooks/notify";
+import trigger from "../../lib/hooks/trigger";
 import { Service } from "feathers-memory";
 import feathers, { HookContext } from "@feathersjs/feathers";
-import { MethodName, HookNotifyOptions } from "../../lib/types";
+import { MethodName, HookTriggerOptions, Subscription, CallAction } from "../../lib/types";
 
 import { addDays } from "date-fns";
 
 function mock(
   hookNames: MethodName | MethodName[], 
-  options: HookNotifyOptions, 
+  options: HookTriggerOptions, 
   beforeHook?: (context: HookContext) => Promise<HookContext>, 
   afterHook?: (context: HookContext) => Promise<HookContext>
 ) {
@@ -16,7 +16,7 @@ function mock(
   const app = feathers();
   app.use("/tests", new Service({ multi: true }));
   const service = app.service("tests");
-  const hook = notify(options);
+  const hook = trigger(options);
 
   const beforeAll = [hook];
   if (beforeHook) { beforeAll.push(beforeHook); }
@@ -42,14 +42,14 @@ function mock(
   };
 }
 
-describe("notify", function() {
+describe("hook - trigger", function() {
   describe("general", function() {
     it("does not throw for minimal example", function() {
       assert.doesNotThrow(
         //@ts-ignore
         () => mock("create", {
           // eslint-disable-next-line @typescript-eslint/no-empty-function
-          notify: () => {}
+          callAction: () => {}
         }),
         "passes"
       );
@@ -61,7 +61,7 @@ describe("notify", function() {
         method: "create",
         service: "tests",
         // eslint-disable-next-line @typescript-eslint/no-empty-function
-        notify: () => {}
+        callAction: () => {}
       });
 
       await assert.rejects(
@@ -74,7 +74,7 @@ describe("notify", function() {
         method: "create",
         service: "tests",
         // eslint-disable-next-line @typescript-eslint/no-empty-function
-        notify: () => {}
+        callAction: () => {}
       });
 
       await assert.rejects(
@@ -88,22 +88,22 @@ describe("notify", function() {
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
         service: "tests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
   
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
   
       await service.update(0, { id: 0, test: false });
-      assert.strictEqual(cbCount, 2, "notify cb was called");
+      assert.strictEqual(cbCount, 2, "callAction cb was called");
   
       await service.patch(0, { test: true });
-      assert.strictEqual(cbCount, 3, "notify cb was called");
+      assert.strictEqual(cbCount, 3, "callAction cb was called");
   
       await service.remove(0);
-      assert.strictEqual(cbCount, 4, "notify cb was called");
+      assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
   
     it("notify with no service", async function() {
@@ -111,44 +111,44 @@ describe("notify", function() {
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
         method: methods,
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
   
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
   
       await service.update(0, { id: 0, test: false });
-      assert.strictEqual(cbCount, 2, "notify cb was called");
+      assert.strictEqual(cbCount, 2, "callAction cb was called");
   
       await service.patch(0, { test: true });
-      assert.strictEqual(cbCount, 3, "notify cb was called");
+      assert.strictEqual(cbCount, 3, "callAction cb was called");
   
       await service.remove(0);
-      assert.strictEqual(cbCount, 4, "notify cb was called");
+      assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
   
     it("notify with no method and no service", async function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
   
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
   
       await service.update(0, { id: 0, test: false });
-      assert.strictEqual(cbCount, 2, "notify cb was called");
+      assert.strictEqual(cbCount, 2, "callAction cb was called");
   
       await service.patch(0, { test: true });
-      assert.strictEqual(cbCount, 3, "notify cb was called");
+      assert.strictEqual(cbCount, 3, "callAction cb was called");
   
       await service.remove(0);
-      assert.strictEqual(cbCount, 4, "notify cb was called");
+      assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
   
     it("notify with method as array", async function() {
@@ -157,22 +157,22 @@ describe("notify", function() {
       const { service } = mock(methods, {
         method: methods,
         service: "tests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
   
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
   
       await service.update(0, { id: 0, test: false });
-      assert.strictEqual(cbCount, 2, "notify cb was called");
+      assert.strictEqual(cbCount, 2, "callAction cb was called");
   
       await service.patch(0, { test: true });
-      assert.strictEqual(cbCount, 3, "notify cb was called");
+      assert.strictEqual(cbCount, 3, "callAction cb was called");
   
       await service.remove(0);
-      assert.strictEqual(cbCount, 4, "notify cb was called");
+      assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
   
     it("notify with service as array", async function() {
@@ -181,22 +181,22 @@ describe("notify", function() {
       const { service } = mock(methods, {
         method: methods,
         service: ["tests", "tests2", "tests3"],
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
   
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
   
       await service.update(0, { id: 0, test: false });
-      assert.strictEqual(cbCount, 2, "notify cb was called");
+      assert.strictEqual(cbCount, 2, "callAction cb was called");
   
       await service.patch(0, { test: true });
-      assert.strictEqual(cbCount, 3, "notify cb was called");
+      assert.strictEqual(cbCount, 3, "callAction cb was called");
   
       await service.remove(0);
-      assert.strictEqual(cbCount, 4, "notify cb was called");
+      assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
   });
 
@@ -206,14 +206,14 @@ describe("notify", function() {
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        notify: (item) => {
+        callAction: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: undefined, item: { id: 0, test: true } });
         }
       });
 
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
     it("create: notify on single create with subscriptions function without condition", async function() {
@@ -221,14 +221,14 @@ describe("notify", function() {
       const { service } = mock("create", () => ({
         method: "create",
         service: "tests",
-        notify: (item) => {
+        callAction: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: undefined, item: { id: 0, test: true } });
         }
       }));
 
       await service.create({ id: 0, test: true });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
     it("create: notify on multi create without condition", async function() {
@@ -236,13 +236,13 @@ describe("notify", function() {
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
 
       await service.create([{ id: 0, test: true }, { id: 1, test: true }, { id: 2, test: true }]);
-      assert.strictEqual(cbCount, 3, "notify cb was called three times");
+      assert.strictEqual(cbCount, 3, "callAction cb was called three times");
     });
 
     it("create: does not notify with service mismatch", async function() {
@@ -250,7 +250,7 @@ describe("notify", function() {
       const { service } = mock("create", {
         method: "create",
         service: "supertests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -264,7 +264,7 @@ describe("notify", function() {
       const { service } = mock("create", {
         method: "update",
         service: "tests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -279,7 +279,7 @@ describe("notify", function() {
         method: "create",
         service: "tests",
         conditionsResult: { id: 1 },
-        notify: (item) => {
+        callAction: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true } });
         }
@@ -289,7 +289,7 @@ describe("notify", function() {
       assert.strictEqual(cbCount, 0, "notify cb wasn't called");
 
       await service.create({ id: 1, test: true });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
     it("create: notify on single create with custom view", async function() {
@@ -299,7 +299,7 @@ describe("notify", function() {
         service: "tests",
         conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
         view: { criticalValue: 10 },
-        notify: (item) => {
+        callAction: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, count: 12 } });
         }
@@ -309,12 +309,12 @@ describe("notify", function() {
       assert.strictEqual(cbCount, 0, "notify cb wasn't called");
 
       await service.create({ id: 1, test: true, count: 12 });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
     it("create: notify on single create with custom param", async function() {
       let cbCount = 0;
-      const notify = (item, sub) => {
+      const callAction: CallAction = (item, sub) => {
         cbCount++;
         if (sub.id === 1) {
           assert.deepStrictEqual(item, { before: undefined, item: { id: 1 } }, "correct item for sub1");
@@ -327,25 +327,25 @@ describe("notify", function() {
         }
       };
 
-      const sub1 = {
+      const sub1: Subscription = {
         id: 1,
         method: "create",
         service: "tests",
         params: { query: { $select: ["id"] } },
-        notify
+        callAction
       };
-      const sub2 = {
+      const sub2: Subscription = {
         id: 2,
         method: "create",
         service: "tests",
         params: { query: { $select: ["id", "test"] } },
-        notify
+        callAction
       };
-      const sub3 = {
+      const sub3: Subscription = {
         id: 3,
         method: "create",
         service: "tests",
-        notify
+        callAction
       };
       const { service } = mock("create", [sub1, sub2, sub3]);
 
@@ -359,7 +359,7 @@ describe("notify", function() {
         method: "create",
         service: "tests",
         conditionsData: { test: true },
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -368,7 +368,7 @@ describe("notify", function() {
       assert.strictEqual(cbCount, 0, "notify cb wasn't called");
 
       await service.create({ id: 1, test: true });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
   });
 
@@ -378,7 +378,7 @@ describe("notify", function() {
       const { service } = mock("update", {
         method: "update",
         service: "tests",
-        notify: (item) => {
+        callAction: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: { id: 0, test: true }, item: { id: 0, test: false } });
         }
@@ -388,7 +388,7 @@ describe("notify", function() {
       assert.strictEqual(cbCount, 0, "notify cb wasn't called");
 
       await service.update(item.id, { ...item, test: false });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
     it("update: does not notify with service mismatch", async function() {
@@ -396,7 +396,7 @@ describe("notify", function() {
       const { service } = mock("update", {
         method: "update",
         service: "supertests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -413,7 +413,7 @@ describe("notify", function() {
       const { service } = mock("update", {
         method: "patch",
         service: "tests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -432,7 +432,7 @@ describe("notify", function() {
         service: "tests",
         conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
         view: { criticalValue: 10 },
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -440,13 +440,13 @@ describe("notify", function() {
       const item = await service.create({ id: 0, test: true, count: 2 });
 
       await service.update(item.id, { id: 0, test: true, count: 12 });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
 
       await service.update(item.id, { id: 0, test: true, count: 9 });
       assert.strictEqual(cbCount, 1, "notify cb wasn't called");
 
       await service.update(item.id, { id: 0, test: true, count: 13 });
-      assert.strictEqual(cbCount, 2, "notify cb was called");
+      assert.strictEqual(cbCount, 2, "callAction cb was called");
     });
   });
 
@@ -456,7 +456,7 @@ describe("notify", function() {
       const { service } = mock("patch", {
         method: "patch",
         service: "tests",
-        notify: (item) => {
+        callAction: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: { id: 0, test: true }, item: { id: 0, test: false } });
         }
@@ -466,7 +466,7 @@ describe("notify", function() {
       assert.strictEqual(cbCount, 0, "notify cb wasn't called");
 
       await service.patch(item.id, { test: false });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
     it("patch: does not notify with service mismatch", async function() {
@@ -474,7 +474,7 @@ describe("notify", function() {
       const { service } = mock("patch", {
         method: "patch",
         service: "supertests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -491,7 +491,7 @@ describe("notify", function() {
       const { service } = mock("patch", {
         method: "update",
         service: "tests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -508,7 +508,7 @@ describe("notify", function() {
       const { service } = mock("patch", {
         method: "patch",
         service: "tests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -528,7 +528,7 @@ describe("notify", function() {
         method: "patch",
         service: "tests",
         conditionsResult: { date: { $lt: "{{ before.date }}" } },
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -536,13 +536,13 @@ describe("notify", function() {
       const item = await service.create({ id: 0, test: true, date: new Date() });
 
       await service.patch(item.id, { date: addDays(new Date(), -2) });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
 
       await service.patch(item.id, { date: addDays(new Date(), 5) });
       assert.strictEqual(cbCount, 1, "notify cb wasn't called");
 
       await service.patch(item.id, { date: addDays(new Date(), -1) });
-      assert.strictEqual(cbCount, 2, "notify cb was called");
+      assert.strictEqual(cbCount, 2, "callAction cb was called");
     });
 
     it("patch: notify with custom view", async function() {
@@ -552,7 +552,7 @@ describe("notify", function() {
         service: "tests",
         conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
         view: { criticalValue: 10 },
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -560,13 +560,13 @@ describe("notify", function() {
       const item = await service.create({ id: 0, test: true, count: 2 });
 
       await service.patch(item.id, { count: 12 });
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
 
       await service.patch(item.id, { count: 9 });
       assert.strictEqual(cbCount, 1, "notify cb wasn't called");
 
       await service.patch(item.id, { count: 13 });
-      assert.strictEqual(cbCount, 2, "notify cb was called");
+      assert.strictEqual(cbCount, 2, "callAction cb was called");
     });
   });
 
@@ -576,7 +576,7 @@ describe("notify", function() {
       const { service } = mock("remove", {
         method: "remove",
         service: "tests",
-        notify: (item) => {
+        callAction: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, { before: { id: 0, test: true }, item: { id: 0, test: true } });
         }
@@ -586,7 +586,7 @@ describe("notify", function() {
       assert.strictEqual(cbCount, 0, "notify cb wasn't called");
 
       await service.remove(item.id);
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
     it("remove: does not notify with service mismatch", async function() {
@@ -594,7 +594,7 @@ describe("notify", function() {
       const { service } = mock("remove", {
         method: "remove",
         service: "supertests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -611,7 +611,7 @@ describe("notify", function() {
       const { service } = mock("remove", {
         method: "update",
         service: "tests",
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -630,7 +630,7 @@ describe("notify", function() {
         service: "tests",
         conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
         view: { criticalValue: 10 },
-        notify: () => {
+        callAction: () => {
           cbCount++;
         }
       });
@@ -639,7 +639,7 @@ describe("notify", function() {
       assert.strictEqual(cbCount, 0, "notify cb wasn't called");
 
       await service.remove(item.id);
-      assert.strictEqual(cbCount, 1, "notify cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
   });
 });

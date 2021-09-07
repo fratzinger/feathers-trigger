@@ -1,20 +1,20 @@
 import type { HookContext } from "@feathersjs/feathers";
-import { ChangesById, HookNotifyOptions, Subscription } from "../types";
+import { ChangesById, HookTriggerOptions, Subscription } from "../types";
 import { checkContext } from "feathers-hooks-common";
 import { changesByIdBefore, changesByIdAfter } from "./changesById";
 import transformMustache from "../utils/transformMustache";
 import sift from "sift";
 import _cloneDeep from "lodash/cloneDeep";
 
-const notify = (
-  options: HookNotifyOptions
+const trigger = (
+  options: HookTriggerOptions
 ): ((context: HookContext) => Promise<HookContext>) => {
   if (!options) { 
     throw new Error("You should define subscriptions");
   }
 
   return async (context: HookContext): Promise<HookContext> => {
-    checkContext(context, null, ["create", "update", "patch", "remove"], "notify");
+    checkContext(context, null, ["create", "update", "patch", "remove"], "trigger");
     
     if (context.type === "before") {
       return await beforeHook(context, options);
@@ -26,7 +26,7 @@ const notify = (
 
 export const beforeHook = async (
   context: HookContext, 
-  options: HookNotifyOptions
+  options: HookTriggerOptions
 ): Promise<HookContext> => {
   let subs = await getSubscriptions(context, options);
 
@@ -144,7 +144,7 @@ export const afterHook = async (
         conditionsResult: conditionsResultNew
       });
 
-      const promise = sub.notify(changeForSub, sub, changes, context);
+      const promise = sub.callAction(changeForSub, sub, changes, context);
 
       if (sub.isBlocking) {
         promises.push(promise);
@@ -169,7 +169,7 @@ function getConfig (context: HookContext, key: string) {
 }
 
 const defaultSubscription: Subscription = {
-  notify: undefined,
+  callAction: undefined,
   conditionsBefore: undefined,
   conditionsData: undefined,
   conditionsResult: undefined,
@@ -182,7 +182,7 @@ const defaultSubscription: Subscription = {
 
 const getSubscriptions = async (
   context: HookContext,
-  options: HookNotifyOptions
+  options: HookTriggerOptions
 ): Promise<undefined | Subscription[]> => {
   const _subscriptions = (typeof options === "function")
     ? await options(context)
@@ -231,4 +231,4 @@ const getIdField = (context: Pick<HookContext, "service">): string => {
   return context.service.options.id;
 };
 
-export default notify;
+export default trigger;

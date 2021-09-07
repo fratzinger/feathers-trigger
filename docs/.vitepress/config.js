@@ -1,9 +1,9 @@
 module.exports = {
-  title: 'feathers-notify',
+  title: 'feathers-trigger',
   description: '',
   head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
   themeConfig: {
-    repo: 'fratzinger/feathers-notify',
+    repo: 'fratzinger/feathers-trigger',
     logo: '/img/logo.svg',
     docsDir: 'docs',
     editLinks: true,

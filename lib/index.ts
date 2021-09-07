@@ -1,7 +1,7 @@
-import notify from "./hooks/notify";
+import trigger from "./hooks/trigger";
 import changesById from "./hooks/changesById";
 
-export { notify };
+export { trigger };
 export { changesById };
 
 export * from "./types";

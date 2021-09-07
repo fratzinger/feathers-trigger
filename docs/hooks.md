@@ -8,7 +8,7 @@ sidebarDepth: 2
 
 |before|after|methods|multi|details|
 |---|---|---|---|---|
-|yes|yes|`create`, `patch`, `update`, `remove`|yes|[source](https://github.com/fratzinger/feathers-notify/blob/main/lib/hooks/changesById.ts)|
+|yes|yes|`create`, `patch`, `update`, `remove`|yes|[source](https://github.com/fratzinger/feathers-trigger/blob/main/lib/hooks/changesById.ts)|
 
 ### Options
 
@@ -18,11 +18,11 @@ sidebarDepth: 2
 | `refetchItems` | As an after-hook refetch <br><br>**Type:** `boolean`<br>**optional** - *Default:* `false` |
 | `skipHooks`| Use `find` or `_find` for refetching<br><br>**Type:** `boolean`<br>**optional** - *Default:* `false` |
 
-## notify
+## trigger
 
 |before|after|methods|multi|details|
 |---|---|---|---|---|
-|yes|yes|`create`, `patch`, `update`, `remove`|yes|[source](https://github.com/fratzinger/feathers-notify/blob/main/lib/hooks/notify.ts)|
+|yes|yes|`create`, `patch`, `update`, `remove`|yes|[source](https://github.com/fratzinger/feathers-trigger/blob/main/lib/hooks/trigger.ts)|
 
 ### Options
 

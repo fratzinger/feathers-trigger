@@ -1,7 +1,7 @@
 ---
 home: true
 heroImage: /img/logo.svg
-heroText: feathers-notify
+heroText: feathers-trigger
 tagLine: 
 actionText: Get Started
 actionLink: ./getting-started
