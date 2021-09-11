@@ -80,20 +80,36 @@ export const afterHook = async (
   const changes = Object.values(changesById);
 
   for (const change of changes) {
-    const { before } = change;
+    const { 
+      before
+    } = change;
     
     for (let sub of subs) {
+      let { item } = change;
+
+      let changeForSub = change;
+
+      if (sub.conditionsResult || sub.conditionsBefore || sub.params || sub.view) {
+        sub = _cloneDeep(sub);
+      }
+
       const { 
         conditionsResult, 
         conditionsBefore
       } = sub;
 
-      let { item } = change;
+      if (sub.params) {
+        const params = (typeof sub.params === "function")
+          ? sub.params(change, sub, changes, subs)
+          : sub.params;
 
-      let changeForSub = change;
-
-      if (conditionsResult || conditionsBefore || sub.params || sub.view) {
-        sub = _cloneDeep(sub);
+        if (params) {
+          const idField = getIdField(context);
+          item = await context.service.get(item[idField], params);
+          if (item) {
+            changeForSub = Object.assign({}, change, { item });
+          }
+        }
       }
 
       let mustacheView: Record<string, unknown> = {
@@ -109,21 +125,6 @@ export const afterHook = async (
         type: context.type,
         user: context.params,
       };
-
-      if (sub.params) {
-        const params = (typeof sub.params === "function")
-          ? sub.params(change, sub, changes, subs)
-          : sub.params;
-
-        if (params) {
-          const idField = getIdField(context);
-          item = await context.service.get(item[idField], params);
-          if (item) {
-            mustacheView.item = item;
-            changeForSub = Object.assign({}, change, { item });
-          }
-        }
-      }
 
       if (sub.view) {
         if (typeof sub.view === "function") {

@@ -3,12 +3,12 @@ import type { Promisable } from "type-fest";
 
 export type MethodName = "create" | "update" | "patch" | "remove";
 
-export type Change<T = unknown> = {
+export type Change<T = any> = {
   before: T
   item: T
 }
 
-export type ChangesById<T = unknown> = {
+export type ChangesById<T = any> = {
     [key: string]: Change<T>
     [key: number]: Change<T>
 }
@@ -21,7 +21,7 @@ export interface HookChangesByIdOptions {
   params?: ManipulateParams
 }
 
-interface ViewContext<T = unknown> {
+interface ViewContext<T = any> {
   item: Change<T>, 
   subscription: Subscription,
   subscriptions: Subscription[],
@@ -29,26 +29,26 @@ interface ViewContext<T = unknown> {
   context: HookContext
 }
 
-export type CallAction<T = unknown> = (item: Change<T>, subscription: Subscription, items: Change<T>[], context: HookContext) => (Promisable<void>);
+export type CallAction<T = any> = (item: Change<T>, subscription: Subscription, items: Change<T>[], context: HookContext) => (Promisable<void>);
 
 export type HookTriggerOptions = Subscription | Subscription[] | ((context: HookContext) => Promisable<Subscription | Subscription[]>)
 
-export type TransformView<T = unknown> = 
+export type TransformView<T = any> = 
   undefined | 
-  ((view: Record<string, unknown>, viewContext: ViewContext<T>) => Promisable<Record<string, unknown>>) | 
-  Record<string, unknown>
+  ((view: Record<string, any>, viewContext: ViewContext<T>) => Promisable<Record<string, any>>) | 
+  Record<string, any>
 
 export type TransformParams =
   undefined |
-  ((item: Record<string, unknown>, subscription: Subscription, items: Record<string, unknown>[], subscriptions: Subscription[]) => Promisable<Params>) |
+  ((item: Record<string, any>, subscription: Subscription, items: Record<string, any>[], subscriptions: Subscription[]) => Promisable<Params>) |
   Params
 
 export interface Subscription {
   service?: string | string[]
   method?: string | string[]
-  conditionsData?: true | Record<string, unknown>
-  conditionsResult?: true | Record<string, unknown>
-  conditionsBefore?: true | Record<string, unknown>
+  conditionsData?: true | Record<string, any>
+  conditionsResult?: true | Record<string, any>
+  conditionsBefore?: true | Record<string, any>
   view?: TransformView
   params?: TransformParams
   isBlocking?: boolean

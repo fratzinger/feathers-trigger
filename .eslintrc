@@ -34,7 +34,8 @@
     "security/detect-object-injection": "off",
     "object-curly-spacing": ["warn", "always"],
     "prefer-const": ["warn"],
-    "@typescript-eslint/require-await": ["error"]
+    "@typescript-eslint/require-await": ["error"],
+    "@typescript-eslint/no-explicit-any": ["off"]
   },
   "overrides": [
     {

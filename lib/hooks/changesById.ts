@@ -119,7 +119,9 @@ const getOrFindById = async <T>(
     if (context.type === "before") {
       let params = _cloneDeep(context.params);
 
-      delete params.query.$select;
+      if (params.query?.$select) {
+        delete params.query.$select;
+      }
 
       params = Object.assign({ paginate: false }, params);
   

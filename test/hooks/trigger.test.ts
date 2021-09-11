@@ -83,7 +83,7 @@ describe("hook - trigger", function() {
       );
     });
   
-    it("notify with no method", async function() {
+    it("triggers with no method", async function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
@@ -106,7 +106,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
   
-    it("notify with no service", async function() {
+    it("triggers with no service", async function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
@@ -129,7 +129,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
   
-    it("notify with no method and no service", async function() {
+    it("triggers with no method and no service", async function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
@@ -151,7 +151,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
   
-    it("notify with method as array", async function() {
+    it("triggers with method as array", async function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
@@ -175,7 +175,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
   
-    it("notify with service as array", async function() {
+    it("triggers with service as array", async function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
@@ -201,7 +201,7 @@ describe("hook - trigger", function() {
   });
 
   describe("create", function() {
-    it("create: notify on single create without condition", async function() {
+    it("create: triggers on single create without condition", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
@@ -216,7 +216,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
-    it("create: notify on single create with subscriptions function without condition", async function() {
+    it("create: triggers on single create with subscriptions function without condition", async function() {
       let cbCount = 0;
       const { service } = mock("create", () => ({
         method: "create",
@@ -231,7 +231,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
-    it("create: notify on multi create without condition", async function() {
+    it("create: triggers on multi create without condition", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
@@ -245,7 +245,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 3, "callAction cb was called three times");
     });
 
-    it("create: does not notify with service mismatch", async function() {
+    it("create: does not trigger with service mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
@@ -259,7 +259,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
-    it("create: does not notify with method mismatch", async function() {
+    it("create: does not trigger with method mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "update",
@@ -273,7 +273,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
-    it("create: notify on single create with condition", async function() {
+    it("create: triggers on single create with condition", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
@@ -292,7 +292,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
-    it("create: notify on single create with custom view", async function() {
+    it("create: triggers on single create with custom view", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
@@ -312,7 +312,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
-    it("create: notify on single create with custom param", async function() {
+    it("create: triggers on single create with custom param", async function() {
       let cbCount = 0;
       const callAction: CallAction = (item, sub) => {
         cbCount++;
@@ -353,7 +353,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 3);
     });
 
-    it("create: notify on single create with conditionsData", async function() {
+    it("create: triggers on single create with conditionsData", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
@@ -373,7 +373,7 @@ describe("hook - trigger", function() {
   });
 
   describe("update", function() {
-    it("update: notify on single update without condition", async function() {
+    it("update: triggers on single update without condition", async function() {
       let cbCount = 0;
       const { service } = mock("update", {
         method: "update",
@@ -391,7 +391,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
-    it("update: does not notify with service mismatch", async function() {
+    it("update: does not trigger with service mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("update", {
         method: "update",
@@ -408,7 +408,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
-    it("update: does not notify with method mismatch", async function() {
+    it("update: does not trigger with method mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("update", {
         method: "patch",
@@ -425,7 +425,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
-    it("update: notify with custom view", async function() {
+    it("update: triggers with custom view", async function() {
       let cbCount = 0;
       const { service } = mock("update", {
         method: "update",
@@ -451,7 +451,7 @@ describe("hook - trigger", function() {
   });
 
   describe("patch", function() {
-    it("patch: notify on single patch without condition", async function() {
+    it("patch: triggers on single patch without condition", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "patch",
@@ -469,7 +469,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
-    it("patch: does not notify with service mismatch", async function() {
+    it("patch: does not trigger with service mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "patch",
@@ -486,7 +486,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
-    it("patch: does not notify with method mismatch", async function() {
+    it("patch: does not trigger with method mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "update",
@@ -503,7 +503,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
-    it("patch: does not notify with empty result", async function() {
+    it("patch: does not trigger with empty result", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "patch",
@@ -522,7 +522,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
-    it("patch: notify if date is before new date", async function() {
+    it("patch: triggers if date is before new date", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "patch",
@@ -545,7 +545,49 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 2, "callAction cb was called");
     });
 
-    it("patch: notify with custom view", async function() {
+    it("patch: multiple triggers on multiple items", async function() {
+      const beforeDate = new Date();
+
+      const items = [
+        { id: 0, test: true, date: addDays(beforeDate, 0) },
+        { id: 1, test: false, date: addDays(beforeDate, 1) },
+        { id: 2, test: true, date: addDays(beforeDate, 2) }
+      ];
+
+      const calledTrigger1ById = {};
+      const calledTrigger2ById = {};
+
+      const { service } = mock("patch", [
+        {
+          conditionsResult: { date: { $lt: "{{ before.date }}" } },
+          callAction: ({ before, item }, sub) => {
+            if (item.id === 0) {
+              assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: addDays(beforeDate, 0).toISOString() } }, "conditions on id:0");
+            } else if (item.id === 1) {
+              assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: addDays(beforeDate, 1).toISOString() } }, "conditions on id:1");
+            } else if (item.id === 2) {
+              assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: addDays(beforeDate, 2).toISOString() } }, "conditions on id:1");
+            }
+            calledTrigger1ById[item.id] = true;
+          }
+        },
+        {
+          conditionsResult: { test: true },
+          callAction: ({ before, item }, sub) => {
+            assert.deepStrictEqual(sub.conditionsResult, { test: true }, "has conditionsResult");
+            calledTrigger2ById[item.id] = true;
+          }
+        }
+      ]);
+
+      await service.create(items);
+
+      await service.patch(null, { date: addDays(new Date(), -2) });
+      assert.deepStrictEqual(calledTrigger1ById, { 0: true, 1: true, 2: true }, "called trigger1 for all items");
+      assert.deepStrictEqual(calledTrigger2ById, { 0: true, 2: true }, "called trigger2 for two items");
+    });
+
+    it("patch: triggers with custom view", async function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "patch",
@@ -571,7 +613,7 @@ describe("hook - trigger", function() {
   });
 
   describe("remove", function() {
-    it("remove: notify on single remove without condition", async function() {
+    it("remove: triggers on single remove without condition", async function() {
       let cbCount = 0;
       const { service } = mock("remove", {
         method: "remove",
@@ -589,7 +631,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
-    it("remove: does not notify with service mismatch", async function() {
+    it("remove: does not trigger with service mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("remove", {
         method: "remove",
@@ -606,7 +648,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
-    it("remove: does not notify with method mismatch", async function() {
+    it("remove: does not trigger with method mismatch", async function() {
       let cbCount = 0;
       const { service } = mock("remove", {
         method: "update",
@@ -623,7 +665,7 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
     });
 
-    it("remove: notify with custom view", async function() {
+    it("remove: triggers with custom view", async function() {
       let cbCount = 0;
       const { service } = mock("remove", {
         method: "remove",
