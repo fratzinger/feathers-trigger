@@ -1,5 +1,10 @@
 import type { HookContext } from "@feathersjs/feathers";
-import { ChangesById, HookTriggerOptions, Subscription } from "../types";
+import { 
+  ChangesById,
+  HookTriggerOptions,
+  Subscription,
+  CallAction
+} from "../types";
 import { checkContext } from "feathers-hooks-common";
 import { changesByIdBefore, changesByIdAfter } from "./changesById";
 import transformMustache from "../utils/transformMustache";
@@ -7,7 +12,8 @@ import sift from "sift";
 import _cloneDeep from "lodash/cloneDeep";
 
 const trigger = (
-  options: HookTriggerOptions
+  options: HookTriggerOptions,
+  callAction: CallAction
 ): ((context: HookContext) => Promise<HookContext>) => {
   if (!options) { 
     throw new Error("You should define subscriptions");
@@ -19,7 +25,7 @@ const trigger = (
     if (context.type === "before") {
       return await beforeHook(context, options);
     } else if (context.type === "after") {
-      return await afterHook(context);
+      return await afterHook(context, callAction);
     }
   };
 };
@@ -57,7 +63,8 @@ export const beforeHook = async (
 };
 
 export const afterHook = async (
-  context: HookContext
+  context: HookContext,
+  callAction: CallAction
 ): Promise<HookContext> => {  
   const subs = getConfig(context, "subscriptions");
   if (!subs?.length) { return context;}
@@ -145,7 +152,7 @@ export const afterHook = async (
         conditionsResult: conditionsResultNew
       });
 
-      const promise = sub.callAction(changeForSub, { subscription: sub, items: changes, context });
+      const promise = callAction(changeForSub, { subscription: sub, items: changes, context });
 
       if (sub.isBlocking) {
         promises.push(promise);
