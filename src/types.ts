@@ -29,7 +29,13 @@ interface ViewContext<T = any> {
   context: HookContext
 }
 
-export type CallAction<T = any> = (item: Change<T>, subscription: Subscription, items: Change<T>[], context: HookContext) => (Promisable<void>);
+export type CallActionOptions<T = any> = { 
+  subscription?: Subscription, 
+  items?: Change<T>[], 
+  context?: HookContext 
+}
+
+export type CallAction<T = any> = (item: Change<T>, options?: CallActionOptions<T>) => (Promisable<void>);
 
 export type HookTriggerOptions = Subscription | Subscription[] | ((context: HookContext) => Promisable<Subscription | Subscription[]>)
 

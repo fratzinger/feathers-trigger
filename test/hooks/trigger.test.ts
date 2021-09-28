@@ -314,7 +314,7 @@ describe("hook - trigger", function() {
 
     it("create: triggers on single create with custom param", async function() {
       let cbCount = 0;
-      const callAction: CallAction = (item, sub) => {
+      const callAction: CallAction = (item, { subscription: sub }) => {
         cbCount++;
         if (sub.id === 1) {
           assert.deepStrictEqual(item, { before: undefined, item: { id: 1 } }, "correct item for sub1");
@@ -560,7 +560,7 @@ describe("hook - trigger", function() {
       const { service } = mock("patch", [
         {
           conditionsResult: { date: { $lt: "{{ before.date }}" } },
-          callAction: ({ before, item }, sub) => {
+          callAction: ({ before, item }, { subscription: sub }) => {
             if (item.id === 0) {
               assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: addDays(beforeDate, 0).toISOString() } }, "conditions on id:0");
             } else if (item.id === 1) {
@@ -573,7 +573,7 @@ describe("hook - trigger", function() {
         },
         {
           conditionsResult: { test: true },
-          callAction: ({ before, item }, sub) => {
+          callAction: ({ before, item }, { subscription: sub }) => {
             assert.deepStrictEqual(sub.conditionsResult, { test: true }, "has conditionsResult");
             calledTrigger2ById[item.id] = true;
           }

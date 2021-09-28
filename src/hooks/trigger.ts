@@ -145,7 +145,7 @@ export const afterHook = async (
         conditionsResult: conditionsResultNew
       });
 
-      const promise = sub.callAction(changeForSub, sub, changes, context);
+      const promise = sub.callAction(changeForSub, { subscription: sub, items: changes, context });
 
       if (sub.isBlocking) {
         promises.push(promise);
