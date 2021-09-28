@@ -3,11 +3,11 @@
   "cache": false,
   "check-coverage": true,
   "include": [
-    "lib/**/*.js",
-    "lib/**/*.ts"
+    "src/**/*.js",
+    "src/**/*.ts"
   ],
   "exclude": [
-    "lib/types.ts"
+    "src/types.ts"
   ],
   "reporter": [
     "html",

@@ -1,8 +1,8 @@
 import assert from "assert";
-import trigger from "../../lib/hooks/trigger";
+import trigger from "../../src/hooks/trigger";
 import { Service } from "feathers-memory";
 import feathers, { HookContext } from "@feathersjs/feathers";
-import { MethodName, HookTriggerOptions, Subscription, CallAction } from "../../lib/types";
+import { MethodName, HookTriggerOptions, Subscription, CallAction } from "../../src/types";
 
 import { addDays } from "date-fns";
 

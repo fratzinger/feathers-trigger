@@ -1,5 +1,5 @@
 import assert from "assert";
-import transformMustache from "../../lib/utils/transformMustache";
+import transformMustache from "../../src/utils/transformMustache";
 
 describe("transformMustache", function() {
   describe("object", function() {

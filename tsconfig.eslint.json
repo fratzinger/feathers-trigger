@@ -10,6 +10,9 @@
       "sourceMap": false,
       "declaration": true
     },
-    "include": ["lib/**/*", "test/**/*"]
+    "include": [
+      "src/**/*", 
+      "test/**/*"
+    ]
   }
   

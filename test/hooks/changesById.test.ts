@@ -1,8 +1,8 @@
 import assert from "assert";
-import changesById from "../../lib/hooks/changesById";
+import changesById from "../../src/hooks/changesById";
 import { Service } from "feathers-memory";
 import feathers from "@feathersjs/feathers";
-import { HookChangesByIdOptions } from "../../lib/types";
+import { HookChangesByIdOptions } from "../../src/types";
 
 function mock(cb, hookName, options?: Partial<HookChangesByIdOptions>, beforeHook?, afterHook?) {
   const app = feathers();

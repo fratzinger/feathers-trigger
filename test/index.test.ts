@@ -3,7 +3,7 @@ import {
   trigger,
   changesById,
   Subscription
-} from "../lib/index";
+} from "../src/index";
 
 describe("index", function() {
   it("exports all members", function() {

@@ -23,7 +23,7 @@
   "types": "dist/",
   "directories": {
     "test": "test",
-    "lib": "lib"
+    "src": "src"
   },
   "scripts": {
     "build": "shx rm -rf dist/ && tsc",

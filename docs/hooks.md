@@ -8,7 +8,7 @@ sidebarDepth: 2
 
 |before|after|methods|multi|details|
 |---|---|---|---|---|
-|yes|yes|`create`, `patch`, `update`, `remove`|yes|[source](https://github.com/fratzinger/feathers-trigger/blob/main/lib/hooks/changesById.ts)|
+|yes|yes|`create`, `patch`, `update`, `remove`|yes|[source](https://github.com/fratzinger/feathers-trigger/blob/main/src/hooks/changesById.ts)|
 
 ### Options
 
@@ -22,7 +22,7 @@ sidebarDepth: 2
 
 |before|after|methods|multi|details|
 |---|---|---|---|---|
-|yes|yes|`create`, `patch`, `update`, `remove`|yes|[source](https://github.com/fratzinger/feathers-trigger/blob/main/lib/hooks/trigger.ts)|
+|yes|yes|`create`, `patch`, `update`, `remove`|yes|[source](https://github.com/fratzinger/feathers-trigger/blob/main/src/hooks/trigger.ts)|
 
 ### Options
 
