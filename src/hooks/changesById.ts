@@ -1,22 +1,27 @@
-import type { HookContext, Id, Params } from "@feathersjs/feathers";
+
 import { getItems } from "feathers-hooks-common";
 
 import _cloneDeep from "lodash/cloneDeep";
+import _get from "lodash/get";
+import _set from "lodash/set";
 
 import { shouldSkip } from "feathers-utils";
+
+import type { HookContext, Id, Params } from "@feathersjs/feathers";
 import type { Change, HookChangesByIdOptions, ManipulateParams } from "../types";
 
-const defaultOptions: HookChangesByIdOptions = {
+const defaultOptions: Required<HookChangesByIdOptions> = {
   skipHooks: false,
   refetchItems: false,
-  params: undefined
+  params: undefined,
+  name: "default"
 };
 
 const changesById = <T>(
   cb: (changesById: Record<Id, Change<T>>, context: HookContext) => void | Promise<void>,
-  providedOptions?: Partial<HookChangesByIdOptions>
+  _options?: Partial<HookChangesByIdOptions>
 ): ((context: HookContext) => Promise<HookContext>) => {
-  const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, providedOptions);
+  const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
   return async (context: HookContext): Promise<HookContext> => {
     if (shouldSkip("checkMulti", context)) { return context; }
 
@@ -34,8 +39,9 @@ const updateMethods = ["update", "patch"];
 
 export const changesByIdBefore = async (
   context: HookContext, 
-  options: Pick<HookChangesByIdOptions, "params" | "skipHooks">
+  _options: Pick<HookChangesByIdOptions, "params" | "skipHooks" | "name">
 ): Promise<HookContext> => {
+  const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
   let byId;
 
   if (context.method === "create") {
@@ -49,20 +55,21 @@ export const changesByIdBefore = async (
     return context; 
   }
 
-  context.params.changelog = context.params.changelog || {};
-  context.params.changelog.itemsBefore = byId;
+  _set(context, `params.changesById.${options.name}.itemsBefore`, byId);
+
   return context;
 };
 
 export const changesByIdAfter = async <T>(
   context: HookContext,
   cb?: (changesById: Record<Id, Change<T>>, context: HookContext) => void | Promise<void>,
-  options?: HookChangesByIdOptions
+  _options?: HookChangesByIdOptions
 ): Promise<HookContext> => {
-  if (!context.params.changelog?.itemsBefore) { return context; }
+  const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
 
-  const { itemsBefore } = context.params.changelog;
-  
+  const itemsBefore = _get(context, `params.changesById.${options.name}.itemsBefore`);
+  if (!itemsBefore) { return context; }
+
   const items = await resultById(context, options);
   
   if (!items) { return context; }
@@ -90,7 +97,8 @@ export const changesByIdAfter = async <T>(
     }, 
     {}
   );
-  context.params.changesById = changesById;
+  
+  _set(context, `params.changesById.${options.name}`, changesById);
   if (cb && typeof cb === "function") {
     await cb(changesById as Record<Id, Change<T>>, context);
   }

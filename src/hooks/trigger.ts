@@ -82,7 +82,7 @@ export const afterHook = async (
 
   const promises = [];
 
-  const changesById: ChangesById = context.params?.changesById;
+  const changesById: ChangesById = context.params?.changesById?.default;
   if (!changesById) { return context; }
   const changes = Object.values(changesById);
 

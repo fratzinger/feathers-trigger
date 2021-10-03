@@ -19,6 +19,7 @@ export interface HookChangesByIdOptions {
   skipHooks: boolean
   refetchItems: boolean
   params?: ManipulateParams
+  name?: string
 }
 
 interface ViewContext<T = any> {
