@@ -12,10 +12,6 @@ const transformMustache = <T>(
   if (!root) { root = item; }
   if (!path) { path = []; }
   if (typeof item === "string") {
-    if (!item.startsWith("{{") || !item.endsWith("}}")) {
-      return item;
-    }
-
     const key = getMustacheKey(item);
 
     if (key && _has(view, key)) {
@@ -41,17 +37,20 @@ const transformMustache = <T>(
 const getMustacheKey = (
   item: string
 ): string | undefined => {
+  if (!item.startsWith("{{") || !item.endsWith("}}")) {
+    return;
+  }
+
   if (
-    (item.match(/{{/g) || []).length !== 1 &&
-    (item.match(/}}/g) || []).length !== 1
+    (item.match(/{{/g) || []).length > 1 ||
+    (item.match(/}}/g) || []).length > 1
   ) {
     return;
   }
+
   const keys = item.match(/{{\s*[\w.]+\s*}}/g).map(x => x.match(/[\w.]+/)[0]);
 
-  if (keys.length === 1) { return keys[0]; }
-
-  return undefined;
+  return keys[0];
 };
 
 /*export const hasMustacheKey = <T>(

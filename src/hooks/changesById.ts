@@ -4,6 +4,7 @@ import { getItems } from "feathers-hooks-common";
 import _cloneDeep from "lodash/cloneDeep";
 import _get from "lodash/get";
 import _set from "lodash/set";
+import _isEqual from "lodash/isEqual";
 
 import { shouldSkip } from "feathers-utils";
 
@@ -14,7 +15,8 @@ const defaultOptions: Required<HookChangesByIdOptions> = {
   skipHooks: false,
   refetchItems: false,
   params: undefined,
-  name: "default"
+  name: "changesById",
+  deleteParams: []
 };
 
 const changesById = <T>(
@@ -25,10 +27,19 @@ const changesById = <T>(
   return async (context: HookContext): Promise<HookContext> => {
     if (shouldSkip("checkMulti", context)) { return context; }
 
+    const pathBefore = getPath(options.name, true);
+
     if (context.type === "before") {
-      await changesByIdBefore(context, options);
+      const changes = await changesByIdBefore(context, options);
+      if (!changes) { return context; }
+
+      _set(context, pathBefore, changes);
     } else if (context.type === "after") {
-      await changesByIdAfter(context, cb, options);
+      const itemsBefore = _get(context, pathBefore);
+      const changes = await changesByIdAfter(context, itemsBefore, cb, options);
+      if (!changes) { return context; }
+
+      _set(context, getPath(options.name, false), changes);
     }
   
     return context;
@@ -39,10 +50,10 @@ const updateMethods = ["update", "patch"];
 
 export const changesByIdBefore = async (
   context: HookContext, 
-  _options: Pick<HookChangesByIdOptions, "params" | "skipHooks" | "name">
-): Promise<HookContext> => {
+  _options: Pick<HookChangesByIdOptions, "params" | "skipHooks" | "name" | "deleteParams">
+): Promise<Record<string, unknown> | unknown[]> => {
   const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
-  let byId;
+  let byId: Record<string, unknown> | unknown[];
 
   if (context.method === "create") {
     byId = {};
@@ -52,27 +63,25 @@ export const changesByIdBefore = async (
   ) {
     byId = await getOrFindById(context, options.params, { skipHooks: options.skipHooks });
   } else { 
-    return context; 
+    return; 
   }
 
-  _set(context, `params.changesById.${options.name}.itemsBefore`, byId);
-
-  return context;
+  return byId;
 };
 
 export const changesByIdAfter = async <T>(
   context: HookContext,
+  itemsBefore: any,
   cb?: (changesById: Record<Id, Change<T>>, context: HookContext) => void | Promise<void>,
   _options?: HookChangesByIdOptions
-): Promise<HookContext> => {
-  const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
+): Promise<Record<Id, Change>> => {
+  if (!itemsBefore) { return; }
 
-  const itemsBefore = _get(context, `params.changesById.${options.name}.itemsBefore`);
-  if (!itemsBefore) { return context; }
+  const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
 
   const items = await resultById(context, options);
   
-  if (!items) { return context; }
+  if (!items) { return; }
   const itemsBeforeOrAfter = (context.method === "remove") ? itemsBefore : items;
 
   const changesById = Object.keys(itemsBeforeOrAfter).reduce(
@@ -98,34 +107,28 @@ export const changesByIdAfter = async <T>(
     {}
   );
   
-  _set(context, `params.changesById.${options.name}`, changesById);
   if (cb && typeof cb === "function") {
     await cb(changesById as Record<Id, Change<T>>, context);
   }
-  return context;
+
+  return changesById;
 };
 
-const getIdField = (context: Pick<HookContext, "service">): string => {
-  return context.service.options.id;
-};
-
-const getOrFindById = async <T>(
-  context: HookContext, 
-  makeParams?: ManipulateParams,
-  _options?: Pick<HookChangesByIdOptions, "skipHooks"> & { byId?: boolean }
-): Promise<Record<Id, T> | T[] | undefined> => {
-  const options = _options || Object.assign({
-    skipHooks: true,
-    byId: true
-  }, _options);
-  
-  let itemOrItems;
-  const idField = getIdField(context);
-
+export const getOrFindByIdParams = async (
+  context: HookContext,
+  makeParams: ManipulateParams,
+  options?: Pick<HookChangesByIdOptions, "deleteParams">
+): Promise<Params> => {
   if (context.id == null) {
-    const method = (options.skipHooks) ? "_find" : "find";
     if (context.type === "before") {
       let params = _cloneDeep(context.params);
+      delete params.changesById;
+
+      if (options?.deleteParams) {
+        options.deleteParams.forEach(key => {
+          delete params[key];
+        });
+      }
 
       if (params.query?.$select) {
         delete params.query.$select;
@@ -133,38 +136,75 @@ const getOrFindById = async <T>(
 
       params = Object.assign({ paginate: false }, params);
   
-      params = (typeof makeParams === "function") ? await makeParams(params, context) : context.params;
-      itemOrItems = await context.service[method](params);
-    } else if (context.type === "after") {
-      itemOrItems = getItems(context);
+      params = (typeof makeParams === "function") 
+        ? await makeParams(params, context) 
+        : params;
+      return params;
+    } else {
+      const itemOrItems = getItems(context);
+      const idField = getIdField(context);
+
       if (!itemOrItems) { return; }
       const fetchedItems = (Array.isArray(itemOrItems)) ? itemOrItems : [itemOrItems];
       
       const ids = fetchedItems.map(x => x && x[idField]);
 
-      let params: Params = (context.id)
-        ? {
-          query: {
-            [idField]: { $in: ids }
-          },
-          paginate: false
-        }
-        : {};
+      let params: Params = {
+        query: {
+          [idField]: { $in: ids }
+        },
+        paginate: false
+      };
 
       params = (makeParams) ? await makeParams(params, context) : params;
-      itemOrItems = await context.service[method](params);
+      return params;
     }
-
-    itemOrItems = itemOrItems && (itemOrItems.data || itemOrItems);
   } else {
-    const method = (options.skipHooks) ? "_get" : "get";
     const query = Object.assign({}, context.params.query);
 
     delete query.$select;
 
     let params: Params = Object.assign({}, context.params, { query });
+    delete params.changesById;
+
+    if (options?.deleteParams) {
+      options.deleteParams.forEach(key => {
+        delete params[key];
+      });
+    }
       
-    params = (typeof makeParams === "function") ? await makeParams(params, context) : params;
+    params = (typeof makeParams === "function") 
+      ? await makeParams(params, context) 
+      : params;
+
+    return params;
+  }
+};
+
+const getOrFindById = async <T>(
+  context: HookContext, 
+  makeParams?: ManipulateParams,
+  _options?: Pick<HookChangesByIdOptions, "skipHooks" | "deleteParams"> & { byId?: boolean }
+): Promise<Record<Id, T> | T[] | undefined> => {
+  const options = Object.assign({
+    skipHooks: true,
+    byId: true
+  }, _options);
+  
+  let itemOrItems;
+  const idField = getIdField(context);
+
+  const params = await getOrFindByIdParams(context, makeParams, options);
+
+  if (context.id == null) {
+    const method = (options.skipHooks) ? "_find" : "find";
+
+    itemOrItems = await context.service[method](params);
+
+    itemOrItems = itemOrItems && (itemOrItems.data || itemOrItems);
+  } else {
+    const method = (options.skipHooks) ? "_get" : "get";
+
     itemOrItems = await context.service[method](context.id, params);
   }
   
@@ -187,17 +227,38 @@ const getOrFindById = async <T>(
 
 const resultById = async (
   context: HookContext,
-  options?: Pick<HookChangesByIdOptions, "params" | "refetchItems" | "skipHooks">
+  options?: Pick<HookChangesByIdOptions, "params" | "refetchItems" | "skipHooks" | "deleteParams">
 ): Promise<Record<string, unknown>> => {
   if (!context.result) { return {}; }
   
   let items: Record<string, unknown>[];
-  if (context.method === "remove" || (!options.refetchItems && !context.params.query?.$select)) {
+  let params = await getOrFindByIdParams(context, options.params, options);
+
+  const contextParams = Object.assign({}, context.params);
+  delete contextParams.changesById;
+  if (options?.deleteParams) {
+    options.deleteParams.forEach(key => {
+      delete contextParams[key];
+    });
+  }
+
+  if (_isEqual(params, context.params)) {
+    params = null;
+  }
+
+  if (context.method === "remove" || !params) {
     let itemOrItems = context.result;
     itemOrItems = (Array.isArray(itemOrItems.data)) ? itemOrItems.data : itemOrItems;
     items = Array.isArray(itemOrItems) ? itemOrItems : [itemOrItems];
   } else {
-    items = await getOrFindById(context, options.params, { skipHooks: options.skipHooks, byId: false }) as Record<string, unknown>[];
+    items = await getOrFindById(
+      context, 
+      () => params,
+      { 
+        skipHooks: options.skipHooks, 
+        byId: false 
+      }
+    ) as Record<string, unknown>[];
   }
   
   const idField = context.service.id;
@@ -207,6 +268,29 @@ const resultById = async (
     byId[id] = item;
     return byId;
   }, {});
+};
+
+const getIdField = (context: Pick<HookContext, "service">): string => {
+  return context.service.options.id;
+};
+
+const getPath = (
+  path: string | string[],
+  isBefore: boolean
+): string | string[] => {
+  if (isBefore) {
+    if (typeof path === "string") {
+      return `params.${path}.itemsBefore`;
+    } else {
+      return ["params", ...path, "itemsBefore"];
+    }
+  } else {
+    if (typeof path === "string") {
+      return `params.${path}`;
+    } else {
+      return ["params", ...path];
+    }
+  }
 };
 
 export default changesById;

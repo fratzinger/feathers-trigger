@@ -4,7 +4,7 @@ import { Service } from "feathers-memory";
 import feathers, { HookContext } from "@feathersjs/feathers";
 import { MethodName, HookTriggerOptions, Subscription, CallAction } from "../../src/types";
 
-import { addDays } from "date-fns";
+import { addDays, isBefore } from "date-fns";
 
 function mock(
   hookNames: MethodName | MethodName[], 
@@ -45,6 +45,14 @@ function mock(
 
 describe("hook - trigger", function() {
   describe("general", function() {
+    it("throws without options", function() {
+      assert.throws(
+        //@ts-expect-error should define options
+        () => mock("create"),
+        "passes"
+      );
+    });
+
     it("does not throw for minimal example", function() {
       assert.doesNotThrow(
         //@ts-ignore
@@ -174,7 +182,7 @@ describe("hook - trigger", function() {
       await service.remove(0);
       assert.strictEqual(cbCount, 4, "callAction cb was called");
     });
-  
+
     it("triggers with service as array", async function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
@@ -196,6 +204,38 @@ describe("hook - trigger", function() {
   
       await service.remove(0);
       assert.strictEqual(cbCount, 4, "callAction cb was called");
+    });
+
+    it("uses `sub.callAction` over global callAction", async function() {
+      let cbCount = 0;
+      let innerCbCount = 0;
+      const methods: MethodName[] = ["create", "update", "patch", "remove"];
+      const { service } = mock(methods, [{
+        conditionsData: { test: true },
+        callAction: () => {
+          innerCbCount++;
+        }
+      }, {
+        conditionsData: { test: false }
+      }], () => {
+        cbCount++;
+      });
+  
+      await service.create({ id: 0, test: true });
+      assert.strictEqual(innerCbCount, 1, "inner callAction cb was called");
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
+  
+      await service.update(0, { id: 0, test: false });
+      assert.strictEqual(innerCbCount, 1, "inner callAction cb wasn't called");
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
+  
+      await service.patch(0, { test: true });
+      assert.strictEqual(innerCbCount, 2, "inner callAction cb was called");
+      assert.strictEqual(cbCount, 1, "callAction cb wasn't called");
+  
+      await service.remove(0);
+      assert.strictEqual(innerCbCount, 2, "inner callAction cb wasn't called");
+      assert.strictEqual(cbCount, 1, "callAction cb wasn't called");
     });
   });
 
@@ -304,6 +344,28 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 1, "callAction cb was called");
     });
 
+    it("create: triggers on single create with custom view as function", async function() {
+      let cbCount = 0;
+      const { service } = mock("create", {
+        method: "create",
+        service: "tests",
+        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        view: (view) => {
+          view.criticalValue = 10;
+          return view;
+        }
+      }, (item) => {
+        cbCount++;
+        assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, count: 12 } });
+      });
+
+      await service.create({ id: 0, test: true, count: 9 });
+      assert.strictEqual(cbCount, 0, "callAction cb wasn't called");
+
+      await service.create({ id: 1, test: true, count: 12 });
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
+    });
+
     it("create: triggers on single create with custom param", async function() {
       let cbCount = 0;
       const callAction: CallAction = (item, { subscription: sub }) => {
@@ -323,13 +385,21 @@ describe("hook - trigger", function() {
         id: 1,
         method: "create",
         service: "tests",
-        params: { query: { $select: ["id"] } }
+        params: (params) => {
+          params.query ||= {};
+          params.query.$select = ["id"];
+          return params;
+        }
       };
       const sub2: Subscription = {
         id: 2,
         method: "create",
         service: "tests",
-        params: { query: { $select: ["id", "test"] } }
+        params: (params) => {
+          params.query ||= {};
+          params.query.$select = ["id", "test"];
+          return params;
+        }
       };
       const sub3: Subscription = {
         id: 3,
@@ -338,8 +408,9 @@ describe("hook - trigger", function() {
       };
       const { service } = mock("create", [sub1, sub2, sub3], callAction);
 
-      await service.create({ id: 1, test: true, comment: "yippieh" });
+      const result = await service.create({ id: 1, test: true, comment: "yippieh" });
       assert.strictEqual(cbCount, 3);
+      assert.deepStrictEqual(result, { id: 1, test: true, comment: "yippieh" }, "has full object");
     });
 
     it("create: triggers on single create with conditionsData", async function() {
@@ -524,6 +595,30 @@ describe("hook - trigger", function() {
       assert.strictEqual(cbCount, 2, "callAction cb was called");
     });
 
+    it("patch: triggers if date is before new date as function", async function() {
+      let cbCount = 0;
+      const { service } = mock("patch", {
+        method: "patch",
+        service: "tests",
+        conditionsResult: ({ before, item }) => {
+          return isBefore(new Date(item.date), new Date(before.date));
+        }
+      }, () => {
+        cbCount++;
+      });
+
+      const item = await service.create({ id: 0, test: true, date: new Date() });
+
+      await service.patch(item.id, { date: addDays(new Date(), -2) });
+      assert.strictEqual(cbCount, 1, "callAction cb was called");
+
+      await service.patch(item.id, { date: addDays(new Date(), 5) });
+      assert.strictEqual(cbCount, 1, "callAction cb wasn't called");
+
+      await service.patch(item.id, { date: addDays(new Date(), -1) });
+      assert.strictEqual(cbCount, 2, "callAction cb was called");
+    });
+
     it("patch: multiple triggers on multiple items", async function() {
       const beforeDate = new Date();
 
@@ -548,11 +643,14 @@ describe("hook - trigger", function() {
       ], ({ before, item }, { subscription: sub }) => {
         if (sub.id === 1) {
           if (item.id === 0) {
-            assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: addDays(beforeDate, 0).toISOString() } }, "conditions on id:0");
+            assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: "{{ before.date }}" } }, "conditions on id:0");
+            assert.deepStrictEqual(sub.resultResolved, { date: { $lt: addDays(beforeDate, 0).toISOString() } }, "conditions on id:0");
           } else if (item.id === 1) {
-            assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: addDays(beforeDate, 1).toISOString() } }, "conditions on id:1");
+            assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: "{{ before.date }}" } }, "conditions on id:0");
+            assert.deepStrictEqual(sub.resultResolved, { date: { $lt: addDays(beforeDate, 1).toISOString() } }, "conditions on id:1");
           } else if (item.id === 2) {
-            assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: addDays(beforeDate, 2).toISOString() } }, "conditions on id:1");
+            assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: "{{ before.date }}" } }, "conditions on id:0");
+            assert.deepStrictEqual(sub.resultResolved, { date: { $lt: addDays(beforeDate, 2).toISOString() } }, "conditions on id:1");
           }
           calledTrigger1ById[item.id] = true;
         } else if (sub.id === 2) {
