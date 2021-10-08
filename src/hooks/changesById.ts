@@ -13,10 +13,10 @@ import type { Change, HookChangesByIdOptions, ManipulateParams } from "../types"
 
 const defaultOptions: Required<HookChangesByIdOptions> = {
   skipHooks: false,
-  refetchItems: false,
   params: undefined,
   name: "changesById",
-  deleteParams: []
+  deleteParams: [],
+  fetchBefore: false
 };
 
 const changesById = <T>(
@@ -50,12 +50,15 @@ const updateMethods = ["update", "patch"];
 
 export const changesByIdBefore = async (
   context: HookContext, 
-  _options: Pick<HookChangesByIdOptions, "params" | "skipHooks" | "name" | "deleteParams">
+  _options: HookChangesByIdOptions
 ): Promise<Record<string, unknown> | unknown[]> => {
-  const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
+  const options: Required<HookChangesByIdOptions> = Object.assign({}, defaultOptions, _options);
   let byId: Record<string, unknown> | unknown[];
 
-  if (context.method === "create") {
+  if (
+    context.method === "create" ||
+    !options.fetchBefore
+  ) {
     byId = {};
   } else if (
     updateMethods.includes(context.method) ||
@@ -77,18 +80,19 @@ export const changesByIdAfter = async <T>(
 ): Promise<Record<Id, Change>> => {
   if (!itemsBefore) { return; }
 
-  const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
+  const options: Required<HookChangesByIdOptions> = Object.assign({}, defaultOptions, _options);
 
   const items = await resultById(context, options);
   
   if (!items) { return; }
-  const itemsBeforeOrAfter = (context.method === "remove") ? itemsBefore : items;
+  const itemsBeforeOrAfter = (context.method === "remove" && options.fetchBefore) ? itemsBefore : items;
 
   const changesById = Object.keys(itemsBeforeOrAfter).reduce(
     (result: Record<Id, Change>, id: string): Record<Id, Change> => {
       if (
-        (context.method !== "create" && !itemsBefore[id]) ||
-        (context.method !== "remove" && !items[id])
+        options.fetchBefore &&
+        ((context.method !== "create" && !itemsBefore[id]) ||
+        (context.method !== "remove" && !items[id]))
       ) {
         throw new Error("Mismatch!");
         //return result;
@@ -141,6 +145,8 @@ export const getOrFindByIdParams = async (
         : params;
       return params;
     } else {
+      if (!makeParams && !context.params.query?.$select) { return; }
+
       const itemOrItems = getItems(context);
       const idField = getIdField(context);
 
@@ -160,6 +166,13 @@ export const getOrFindByIdParams = async (
       return params;
     }
   } else {
+    if (
+      context.type === "after" && 
+      !makeParams &&
+      !context.params.query?.$select) {
+      return;
+    }
+
     const query = Object.assign({}, context.params.query);
 
     delete query.$select;
@@ -227,23 +240,25 @@ const getOrFindById = async <T>(
 
 const resultById = async (
   context: HookContext,
-  options?: Pick<HookChangesByIdOptions, "params" | "refetchItems" | "skipHooks" | "deleteParams">
+  options?: Pick<HookChangesByIdOptions, "params" | "skipHooks" | "deleteParams">
 ): Promise<Record<string, unknown>> => {
   if (!context.result) { return {}; }
   
   let items: Record<string, unknown>[];
   let params = await getOrFindByIdParams(context, options.params, options);
 
-  const contextParams = Object.assign({}, context.params);
-  delete contextParams.changesById;
-  if (options?.deleteParams) {
-    options.deleteParams.forEach(key => {
-      delete contextParams[key];
-    });
-  }
-
-  if (_isEqual(params, context.params)) {
-    params = null;
+  if (params) {
+    const contextParams = Object.assign({}, context.params);
+    delete contextParams.changesById;
+    if (options?.deleteParams) {
+      options.deleteParams.forEach(key => {
+        delete contextParams[key];
+      });
+    }
+  
+    if (_isEqual(params, context.params)) {
+      params = null;
+    }
   }
 
   if (context.method === "remove" || !params) {

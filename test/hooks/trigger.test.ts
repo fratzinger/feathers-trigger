@@ -436,10 +436,12 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("update", {
         method: "update",
-        service: "tests"
-      }, (item) => {
+        service: "tests",
+        fetchBefore: true
+      }, ({ before, item }) => {
         cbCount++;
-        assert.deepStrictEqual(item, { before: { id: 0, test: true }, item: { id: 0, test: false } });
+        assert.deepStrictEqual(before, { id: 0, test: true });
+        assert.deepStrictEqual(item, { id: 0, test: false });
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -510,10 +512,12 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "patch",
-        service: "tests"
-      }, (item) => {
+        service: "tests",
+        fetchBefore: true
+      }, ({ before, item }) => {
         cbCount++;
-        assert.deepStrictEqual(item, { before: { id: 0, test: true }, item: { id: 0, test: false } });
+        assert.deepStrictEqual(before, { id: 0, test: true });
+        assert.deepStrictEqual(item, { id: 0, test: false });
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -578,7 +582,8 @@ describe("hook - trigger", function() {
       const { service } = mock("patch", {
         method: "patch",
         service: "tests",
-        conditionsResult: { date: { $lt: "{{ before.date }}" } }
+        conditionsResult: { date: { $lt: "{{ before.date }}" } },
+        fetchBefore: true
       }, () => {
         cbCount++;
       });
@@ -602,7 +607,8 @@ describe("hook - trigger", function() {
         service: "tests",
         conditionsResult: ({ before, item }) => {
           return isBefore(new Date(item.date), new Date(before.date));
-        }
+        },
+        fetchBefore: true
       }, () => {
         cbCount++;
       });
@@ -634,7 +640,8 @@ describe("hook - trigger", function() {
       const { service } = mock("patch", [
         {
           id: 1,
-          conditionsResult: { date: { $lt: "{{ before.date }}" } }
+          conditionsResult: { date: { $lt: "{{ before.date }}" } },
+          fetchBefore: true
         },
         {
           id: 2,
@@ -695,10 +702,12 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("remove", {
         method: "remove",
-        service: "tests"
-      }, (item) => {
+        service: "tests",
+        fetchBefore: true
+      }, ({ before, item }) => {
         cbCount++;
-        assert.deepStrictEqual(item, { before: { id: 0, test: true }, item: { id: 0, test: true } });
+        assert.deepStrictEqual(before, { id: 0, test: true });
+        assert.deepStrictEqual(item, { id: 0, test: true });
       });
 
       const item = await service.create({ id: 0, test: true });

@@ -92,7 +92,8 @@ describe("trigger scenarios", function() {
           return params;
         },
         service: "comments",
-        method: ["create", "patch"]
+        method: ["create", "patch"],
+        fetchBefore: true
       }, ({ before, item }, { context }) => {
         if (callCounter === 0) {
           assert.deepStrictEqual(item, {

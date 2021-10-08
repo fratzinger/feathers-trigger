@@ -71,8 +71,9 @@ export const triggerBefore = async (
     if (!context.params.changesById?.[stringified]?.itemsBefore) {
       const before = await changesByIdBefore(context, { 
         skipHooks: false, 
-        params: () => sub.paramsResolved,
-        deleteParams: ["trigger"]
+        params: () => sub.params ? sub.paramsResolved : null,
+        deleteParams: ["trigger"],
+        fetchBefore: sub.fetchBefore
       });
 
       _set(context, ["params", "changesById", stringified, "itemsBefore"], before);
@@ -107,8 +108,8 @@ export const triggerAfter = async (
           name: ["changesById", sub.identifier],
           params: sub.params,
           skipHooks: false,
-          refetchItems: false,
-          deleteParams: ["trigger"]
+          deleteParams: ["trigger"],
+          fetchBefore: sub.fetchBefore
         }
       );
     } else {
@@ -204,7 +205,8 @@ const defaultSubscription: Required<SubscriptionResolved> = {
   service: undefined,
   view: undefined,
   paramsResolved: undefined,
-  identifier: null
+  identifier: null,
+  fetchBefore: false
 };
 
 const getSubscriptions = async (

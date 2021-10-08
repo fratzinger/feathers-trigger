@@ -65,7 +65,7 @@ describe("hook - changesById", function() {
         assert.deepStrictEqual(byId["0"].item, { id: 0, test: true, comment: "awesome" }, "has right item");
       };
 
-      const { service } = mock(cb, "create", { refetchItems: true });
+      const { service } = mock(cb, "create");
       assert.ok(!calledCb, "not called cb");
     
       const item = await service.create({ test: true, comment: "awesome" });
@@ -85,7 +85,7 @@ describe("hook - changesById", function() {
         assert.deepStrictEqual(byId["0"].item, { id: 0, test: false }, "has right item");
       };
 
-      const { service } = mock(cb, "update");
+      const { service } = mock(cb, "update", { fetchBefore: true });
     
       const item = await service.create({ test: true, comment: "awesome" });
     
@@ -105,7 +105,7 @@ describe("hook - changesById", function() {
         assert.deepStrictEqual(byId["0"].before, { id: 0, test: true, comment: "awesome" }, "has right before");
         assert.deepStrictEqual(byId["0"].item, { id: 0, test: false }, "has right item");
       };
-      const { service } = mock(cb, "update");
+      const { service } = mock(cb, "update", { fetchBefore: true });
       
       const item = await service.create({ test: true, comment: "awesome" });
       
@@ -127,7 +127,7 @@ describe("hook - changesById", function() {
         assert.deepStrictEqual(byId["0"].before, { id: 0, test: true, comment: "awesome" }, "has right before");
         assert.deepStrictEqual(byId["0"].item, { id: 0, test: false, comment: "awesome" }, "has right item");
       };
-      const { service } = mock(cb, "patch");
+      const { service } = mock(cb, "patch", { fetchBefore: true });
       
       const item = await service.create({ test: true, comment: "awesome" });
       
@@ -147,7 +147,7 @@ describe("hook - changesById", function() {
         assert.deepStrictEqual(byId["0"].before, { id: 0, test: true, comment: "awesome" }, "has right before");
         assert.deepStrictEqual(byId["0"].item, { id: 0, test: false, comment: "awesome" }, "has right item");
       };
-      const { service } = mock(cb, "patch");
+      const { service } = mock(cb, "patch", { fetchBefore: true });
         
       const item = await service.create({ test: true, comment: "awesome" });
         
@@ -170,7 +170,7 @@ describe("hook - changesById", function() {
         assert.deepStrictEqual(byId["0"].item, { id: 0, test: true, comment: "awesome" }, "has right item");
       };
 
-      const { service } = mock(cb, "remove");
+      const { service } = mock(cb, "remove", { fetchBefore: true });
     
       const item = await service.create({ test: true, comment: "awesome" });
 

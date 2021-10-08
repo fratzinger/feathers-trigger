@@ -18,10 +18,10 @@ export type ManipulateParams =
 
 export interface HookChangesByIdOptions {
   skipHooks: boolean
-  refetchItems: boolean
   params?: ManipulateParams
   deleteParams?: string[]
   name?: string | string[]
+  fetchBefore?: boolean
 }
 
 interface ViewContext<T = any> {
@@ -65,6 +65,7 @@ export interface Subscription {
   params?: ManipulateParams
   isBlocking?: boolean
   callAction?: CallAction
+  fetchBefore?: boolean
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
