@@ -286,4 +286,63 @@ describe("trigger-count.test.ts", function() {
     assert.strictEqual(findCount(), 5);
     assert.strictEqual(getCount(), 5);
   });
+
+  it("subs with same params reuse find/get", async function() {
+    mock([
+      { 
+        fetchBefore: true, 
+        params: (params) => {
+          params.$populateParams = { name: "all" };
+          return params;
+        } 
+      }, { 
+        fetchBefore: true, 
+        params: (params) => {
+          params.$populateParams = { name: "all" };
+          return params;
+        } 
+      }, { 
+        fetchBefore: true, 
+        params: (params) => {
+          params.$populateParams = { name: "all" };
+          return params;
+        } 
+      }
+    ]);
+
+    const item = await service.create({ test: true });
+    assert.strictEqual(triggerCounter, 3);
+    assert.strictEqual(findCount(), 1);
+    assert.strictEqual(getCount(), 0);
+
+    await service.update(item.id, { id: item.id, test: false });
+    assert.strictEqual(triggerCounter, 6);
+    assert.strictEqual(findCount(), 1);
+    assert.strictEqual(getCount(), 2);
+
+    await service.patch(item.id, { test: true });
+    assert.strictEqual(triggerCounter, 9);
+    assert.strictEqual(findCount(), 1);
+    assert.strictEqual(getCount(), 4);
+
+    await service.patch(null, { test: true });
+    assert.strictEqual(triggerCounter, 12);
+    assert.strictEqual(findCount(), 3);
+    assert.strictEqual(getCount(), 4);
+
+    await service.remove(item.id);
+    assert.strictEqual(triggerCounter, 15);
+    assert.strictEqual(findCount(), 3);
+    assert.strictEqual(getCount(), 5);
+
+    await service.create({ test: true });
+    assert.strictEqual(triggerCounter, 18);
+    assert.strictEqual(findCount(), 4);
+    assert.strictEqual(getCount(), 5);
+
+    await service.remove(null);
+    assert.strictEqual(triggerCounter, 21);
+    assert.strictEqual(findCount(), 5);
+    assert.strictEqual(getCount(), 5);
+  });
 });

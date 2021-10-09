@@ -66,18 +66,19 @@ export const triggerBefore = async (
   for (const sub of subs) {
     sub.paramsResolved = await getOrFindByIdParams(context, sub.params, { deleteParams: ["trigger"] });
     
-    const stringified = JSON.stringify(sub.paramsResolved);
-    sub.identifier = stringified;
-    if (!context.params.changesById?.[stringified]?.itemsBefore) {
-      const before = await changesByIdBefore(context, { 
-        skipHooks: false, 
-        params: () => sub.params ? sub.paramsResolved : null,
-        deleteParams: ["trigger"],
-        fetchBefore: sub.fetchBefore
-      });
-
-      _set(context, ["params", "changesById", stringified, "itemsBefore"], before);
+    sub.identifier = JSON.stringify(sub.paramsResolved);
+    if (context.params.changesById?.[sub.identifier]?.itemsBefore) {
+      continue;
     }
+    
+    const before = await changesByIdBefore(context, { 
+      skipHooks: false, 
+      params: () => sub.params ? sub.paramsResolved : null,
+      deleteParams: ["trigger"],
+      fetchBefore: sub.fetchBefore
+    });
+
+    _set(context, ["params", "changesById", sub.identifier, "itemsBefore"], before);
   }
 
   setConfig(context, "subscriptions", subs);
@@ -112,9 +113,11 @@ export const triggerAfter = async (
           fetchBefore: sub.fetchBefore
         }
       );
-    } else {
-      changesById = context.params.changesById?.[sub.identifier];
+
+      _set(context, ["params", "changesById", sub.identifier], changesById);
     }
+  
+    changesById = context.params.changesById?.[sub.identifier];
 
     if (!changesById) { continue; }
 

@@ -413,6 +413,53 @@ describe("hook - trigger", function() {
       assert.deepStrictEqual(result, { id: 1, test: true, comment: "yippieh" }, "has full object");
     });
 
+    it("create: $select in params has full item in trigger", async function() {
+      let cbCount = 0;
+      const callAction: CallAction = (item, { subscription: sub }) => {
+        cbCount++;
+        if (sub.id === 1) {
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 1 } }, "correct item for sub1");
+        } else if (sub.id === 2) {
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true } }, "correct item for sub2");
+        } else if (sub.id === 3) {
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, comment: "yippieh" } }, "correct item for sub3");
+        } else {
+          assert.fail("should not get here");
+        }
+      };
+
+      const sub1: Subscription = {
+        id: 1,
+        method: "create",
+        service: "tests",
+        params: (params) => {
+          params.query ||= {};
+          params.query.$select = ["id"];
+          return params;
+        }
+      };
+      const sub2: Subscription = {
+        id: 2,
+        method: "create",
+        service: "tests",
+        params: (params) => {
+          params.query ||= {};
+          params.query.$select = ["id", "test"];
+          return params;
+        }
+      };
+      const sub3: Subscription = {
+        id: 3,
+        method: "create",
+        service: "tests"
+      };
+      const { service } = mock("create", [sub1, sub2, sub3], callAction);
+
+      const result = await service.create({ id: 1, test: true, comment: "yippieh" }, { query: { $select: ["id", "comment"] } });
+      assert.strictEqual(cbCount, 3);
+      assert.deepStrictEqual(result, { id: 1, comment: "yippieh" }, "has subset");
+    });
+
     it("create: triggers on single create with conditionsData", async function() {
       let cbCount = 0;
       const { service } = mock("create", {
