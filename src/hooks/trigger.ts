@@ -1,20 +1,21 @@
-import type { HookContext, Id, Params } from "@feathersjs/feathers";
-import type {
-  HookTriggerOptions,
-  CallAction,
-  SubscriptionResolved
-} from "../types";
 import { checkContext } from "feathers-hooks-common";
 import { 
   changesByIdBefore, 
   changesByIdAfter, 
   getOrFindByIdParams
 } from "./changesById";
-import transformMustache from "../utils/transformMustache";
+import transformMustache from "object-replace-mustache";
 import sift from "sift";
 import _cloneDeep from "lodash/cloneDeep";
 import _set from "lodash/set";
-import { Change, ManipulateParams } from "..";
+
+import type { HookContext, Id } from "@feathersjs/feathers";
+import type {
+  HookTriggerOptions,
+  CallAction,
+  SubscriptionResolved,
+  Change
+} from "../types";
 
 const trigger = (
   options: HookTriggerOptions,
@@ -252,7 +253,7 @@ const testCondition = (
 
   conditions = _cloneDeep(conditions);
   const transformedConditions = transformMustache(conditions, mustacheView);
-  return (sift(conditions)(item)) ? transformedConditions : false;
+  return (sift(transformedConditions)(item)) ? transformedConditions : false;
 };
 
 export default trigger;

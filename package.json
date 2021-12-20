@@ -42,6 +42,7 @@
     "feathers-hooks-common": "^5.0.6",
     "feathers-utils": "^1.5.12",
     "lodash": "^4.17.21",
+    "object-replace-mustache": "^0.1.0",
     "sift": "^15.0.0",
     "type-fest": "^2.3.4"
   },
