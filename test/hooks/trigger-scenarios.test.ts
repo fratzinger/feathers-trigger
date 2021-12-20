@@ -3,7 +3,11 @@ import trigger from "../../src/hooks/trigger";
 import { Service } from "feathers-memory";
 import { populate } from "feathers-graph-populate";
 import feathers, { HookContext } from "@feathersjs/feathers";
-import { MethodName, HookTriggerOptions, CallAction } from "../../src/types";
+import { withResult } from "feathers-fletching";
+
+import { addDays } from "date-fns";
+
+import type { MethodName, HookTriggerOptions, CallAction } from "../../src/types";
 
 describe("trigger scenarios", function() {
   describe("notify on comments for published articles", function() {
@@ -153,6 +157,148 @@ describe("trigger scenarios", function() {
       const comment21 = await serviceComments.patch(comment2.id, { body: "hi21" });
       assert.strictEqual(callCounter, 2, "not called cb");
       assert.deepStrictEqual(comment21, { id: comment2.id, body: "hi21", articleId: article1.id });
+    });
+  });
+
+  describe("notify on projects assigned to user that get delayed", function() {
+    const mock = (
+      hookNames: MethodName | MethodName[], 
+      options: HookTriggerOptions,
+      callAction: CallAction,
+      beforeHook?: (context: HookContext) => Promise<HookContext>, 
+      afterHook?: (context: HookContext) => Promise<HookContext>
+    ) => {
+      hookNames = (Array.isArray(hookNames)) ? hookNames : [hookNames];
+      const app = feathers();
+
+      app.use("/projects", new Service({ 
+        multi: true,
+        id: "id",
+        startId: 1
+      }));
+      const serviceProjects = app.service("projects");
+
+      serviceProjects.hooks({
+        after: {
+          all: [
+            withResult({
+              startsAt: (result) => {
+                return result.startsAt && new Date(result.startsAt);
+              }
+            }),
+            populate({
+              populates: {
+                user: {
+                  nameAs: "user",
+                  service: "users",
+                  asArray: false,
+                  keyHere: "userId",
+                  keyThere: "id"
+                }
+              },
+              namedQueries: {
+                "withUser": {
+                  user: {}
+                }
+              }
+            })
+          ]
+        }
+      });
+
+      app.use("/users", new Service({ 
+        multi: true,
+        id: "id",
+        startId: 1
+      }));
+      const serviceUsers = app.service("users");
+
+      serviceUsers.hooks({
+        after: {
+          all: [
+            populate({
+              populates: {
+                projects: {
+                  nameAs: "projects",
+                  service: "projects",
+                  asArray: true,
+                  keyHere: "id",
+                  keyThere: "userId"
+                }
+              },
+              namedQueries: {
+                "withProjects": {
+                  projects: {}
+                }
+              }
+            })
+          ]
+        }
+      });
+
+      const hook = trigger(options, callAction);
+    
+      const beforeAll = [hook];
+      if (beforeHook) { beforeAll.push(beforeHook); }
+    
+      const afterAll = [hook];
+      if (afterHook) { afterAll.push(afterHook); }
+    
+      const hooks = {
+        before: {},
+        after: {}
+      };
+    
+      hookNames.forEach(hookName => {
+        hooks.before[hookName] = beforeAll;
+        hooks.after[hookName] = afterAll;
+      });
+    
+      app.hooks(hooks);
+      
+      return { 
+        app, 
+        serviceProjects,
+        serviceUsers 
+      };
+    };
+
+    it("notify on projects assigned to user that get delayed", async function() {
+      let callCounter = 0;
+      const { 
+        serviceProjects, 
+        serviceUsers 
+      } = mock(["create", "patch", "update", "remove"], {
+        service: "projects",
+        method: ["patch", "update"],
+        fetchBefore: true,
+        conditionsResult: { startsAt: { $gt: "{{ before.startsAt }}" } }
+      }, ({ before, item }, { context }) => {
+        if (callCounter === 0) {
+          assert.strictEqual(item.userId, user1.id, "user is user1 on first call");
+        }
+        callCounter++;
+      });
+
+      const user1 = await serviceUsers.create({ id: 1, name: "user 1" });
+      const user2 = await serviceUsers.create({ id: 2, name: "user 2" });
+      const user3 = await serviceUsers.create({ id: 3, name: "user 3" });
+
+      const [project1, project2] = await serviceProjects.create([
+        {
+          startsAt: new Date(),
+          userId: user1.id
+        }, {
+          startsAt: addDays(new Date(), -10),
+          userId: user2.id
+        }
+      ]);
+
+      assert.strictEqual(callCounter, 0);
+
+      await serviceProjects.patch(project1.id, { startsAt: addDays(new Date(), 2) });
+
+      assert.strictEqual(callCounter, 1);
     });
   });
 });

@@ -1,18 +1,17 @@
 {
-    "compilerOptions": {
-      "allowSyntheticDefaultImports": true,
-      "esModuleInterop": true,
-      "outDir": "dist",
-      "moduleResolution": "node",
-      "target": "es2015",
-      "module": "commonjs",
-      "downlevelIteration": true,
-      "sourceMap": false,
-      "declaration": true
-    },
-    "include": [
-      "src/**/*", 
-      "test/**/*"
-    ]
-  }
-  
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "outDir": "dist",
+    "moduleResolution": "node",
+    "target": "es2015",
+    "module": "commonjs",
+    "downlevelIteration": true,
+    "sourceMap": false,
+    "declaration": true
+  },
+  "include": [
+    "src/**/*", 
+    "test/**/*"
+  ]
+}
