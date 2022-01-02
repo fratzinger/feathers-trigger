@@ -1,6 +1,6 @@
 module.exports = {
   title: 'feathers-trigger',
-  description: '',
+  description: 'Add triggers and actions to your feathers app.',
   head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
   themeConfig: {
     repo: 'fratzinger/feathers-trigger',
