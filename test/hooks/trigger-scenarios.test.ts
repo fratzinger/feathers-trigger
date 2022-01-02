@@ -7,14 +7,14 @@ import { withResult } from "feathers-fletching";
 
 import { addDays } from "date-fns";
 
-import type { MethodName, HookTriggerOptions, CallAction } from "../../src/types";
+import type { MethodName, HookTriggerOptions, Action } from "../../src/types";
 
 describe("trigger scenarios", function() {
   describe("notify on comments for published articles", function() {
     const mock = (
       hookNames: MethodName | MethodName[], 
       options: HookTriggerOptions,
-      callAction: CallAction,
+      action: Action,
       beforeHook?: (context: HookContext) => Promise<HookContext>, 
       afterHook?: (context: HookContext) => Promise<HookContext>
     ) => {
@@ -34,7 +34,7 @@ describe("trigger scenarios", function() {
       }));
       const serviceArticles = app.service("articles");
 
-      const hook = trigger(options, callAction);
+      const hook = trigger(options, action);
     
       const beforeAll = [hook];
       if (beforeHook) { beforeAll.push(beforeHook); }
@@ -164,7 +164,7 @@ describe("trigger scenarios", function() {
     const mock = (
       hookNames: MethodName | MethodName[], 
       options: HookTriggerOptions,
-      callAction: CallAction,
+      action: Action,
       beforeHook?: (context: HookContext) => Promise<HookContext>, 
       afterHook?: (context: HookContext) => Promise<HookContext>
     ) => {
@@ -236,7 +236,7 @@ describe("trigger scenarios", function() {
         }
       });
 
-      const hook = trigger(options, callAction);
+      const hook = trigger(options, action);
     
       const beforeAll = [hook];
       if (beforeHook) { beforeAll.push(beforeHook); }
@@ -272,7 +272,7 @@ describe("trigger scenarios", function() {
         service: "projects",
         method: ["patch", "update"],
         fetchBefore: true,
-        conditionsResult: { startsAt: { $gt: "{{ before.startsAt }}" } }
+        conditionsResult: { startsAt: { $gt: "{{ before.startsAt }}" }, userId: { $ne: "{{ user.id }}" } },
       }, ({ before, item }, { context }) => {
         if (callCounter === 0) {
           assert.strictEqual(item.userId, user1.id, "user is user1 on first call");
@@ -296,7 +296,15 @@ describe("trigger scenarios", function() {
 
       assert.strictEqual(callCounter, 0);
 
-      await serviceProjects.patch(project1.id, { startsAt: addDays(new Date(), 2) });
+      await serviceProjects.patch(project1.id, { startsAt: addDays(new Date(), 2) }, { user: user1 });
+
+      assert.strictEqual(callCounter, 0);
+
+      await serviceProjects.patch(project1.id, { startsAt: addDays(new Date(), -10) }, { user: user2 });
+
+      assert.strictEqual(callCounter, 0);
+
+      await serviceProjects.patch(project1.id, { startsAt: addDays(new Date(), 2) }, { user: user2 });
 
       assert.strictEqual(callCounter, 1);
     });

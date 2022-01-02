@@ -12,14 +12,15 @@ import _set from "lodash/set";
 import type { HookContext, Id } from "@feathersjs/feathers";
 import type {
   HookTriggerOptions,
-  CallAction,
+  Action,
   SubscriptionResolved,
   Change
 } from "../types";
+import { Subscription } from "..";
 
 const trigger = (
   options: HookTriggerOptions,
-  callAction: CallAction
+  action: Action
 ): ((context: HookContext) => Promise<HookContext>) => {
   if (!options) { 
     throw new Error("You should define subscriptions");
@@ -29,9 +30,9 @@ const trigger = (
     checkContext(context, null, ["create", "update", "patch", "remove"], "trigger");
     
     if (context.type === "before") {
-      return await triggerBefore(context, options, callAction);
+      return await triggerBefore(context, options, action);
     } else if (context.type === "after") {
-      return await triggerAfter(context, callAction);
+      return await triggerAfter(context, action);
     }
   };
 };
@@ -39,7 +40,7 @@ const trigger = (
 export const triggerBefore = async (
   context: HookContext, 
   options: HookTriggerOptions,
-  callAction?: CallAction
+  action?: Action
 ): Promise<HookContext> => {
   let subs = await getSubscriptions(context, options);
 
@@ -49,7 +50,7 @@ export const triggerBefore = async (
     const result: SubscriptionResolved[] = [];
     await Promise.all(
       subs.map(async sub => {
-        if (!sub.callAction && !callAction) { return; }
+        if (!sub.action && !action) { return; }
 
         sub.dataResolved = (typeof sub.conditionsData === "function")
           ? await sub.conditionsData(context.data, context)
@@ -65,6 +66,8 @@ export const triggerBefore = async (
   if (!subs?.length) { return context; }
 
   for (const sub of subs) {
+    if (checkConditions(sub)) { continue; }
+
     sub.paramsResolved = await getOrFindByIdParams(context, sub.params, { deleteParams: ["trigger"] });
     
     sub.identifier = JSON.stringify(sub.paramsResolved);
@@ -76,7 +79,7 @@ export const triggerBefore = async (
       skipHooks: false, 
       params: () => sub.params ? sub.paramsResolved : null,
       deleteParams: ["trigger"],
-      fetchBefore: sub.fetchBefore
+      fetchBefore: sub.fetchBefore || (sub.conditionsBefore !== true)
     });
 
     _set(context, ["params", "changesById", sub.identifier, "itemsBefore"], before);
@@ -89,7 +92,7 @@ export const triggerBefore = async (
 
 export const triggerAfter = async (
   context: HookContext,
-  callAction?: CallAction
+  action?: Action
 ): Promise<HookContext> => {  
   const subs = getConfig(context, "subscriptions");
   if (!subs?.length) { return context; }
@@ -99,6 +102,7 @@ export const triggerAfter = async (
   const promises = [];
 
   for (const sub of subs) {
+    if (checkConditions(sub)) { continue; }
     const itemsBefore = context.params.changesById?.[sub.identifier]?.itemsBefore;
     let changesById: Record<Id, Change>;
     if (itemsBefore) {
@@ -146,7 +150,7 @@ export const triggerAfter = async (
         path: context.path,
         service: context.service,
         type: context.type,
-        user: context.params,
+        user: context.params?.user,
       };
 
       if (sub.view) {
@@ -167,11 +171,9 @@ export const triggerAfter = async (
         : testCondition(mustacheView, before, conditionsBefore);
       if (!sub.beforeResolved) { continue; }
 
-      const callActionFunction = (sub.callAction)
-        ? sub.callAction
-        : callAction;
+      const _action = sub.action || action;
 
-      const promise = callActionFunction(changeForSub, { subscription: sub, items: changes, context });
+      const promise = _action(changeForSub, { subscription: sub, items: changes, context });
 
       if (sub.isBlocking) {
         promises.push(promise);
@@ -195,8 +197,12 @@ function getConfig (context: HookContext, key: string): undefined | Subscription
   return context.params.trigger?.[key];
 }
 
+function checkConditions (sub: Subscription): boolean {
+  return (!sub.conditionsBefore && !sub.conditionsData && !sub.conditionsResult);
+}
+
 const defaultSubscription: Required<SubscriptionResolved> = {
-  callAction: undefined,
+  action: undefined,
   conditionsBefore: true,
   conditionsData: true,
   conditionsResult: true,

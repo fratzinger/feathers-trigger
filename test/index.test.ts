@@ -11,7 +11,7 @@ describe("index", function() {
     assert.ok(changesById, "exports changesById hook");
     
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const sub: Subscription = { method: "create", service: "tests", callAction: () => {} };
+    const sub: Subscription = { method: "create", service: "tests", action: () => {} };
     assert.ok(sub, "exports types");
   });
 });

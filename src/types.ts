@@ -9,8 +9,8 @@ export type Change<T = any> = {
 }
 
 export type ChangesById<T = any> = {
-    [key: string]: Change<T>
-    [key: number]: Change<T>
+  [key: string]: Change<T>
+  [key: number]: Change<T>
 }
 
 export type ManipulateParams = 
@@ -21,6 +21,7 @@ export interface HookChangesByIdOptions {
   params?: ManipulateParams
   deleteParams?: string[]
   name?: string | string[]
+  /** @default false */
   fetchBefore?: boolean
 }
 
@@ -32,13 +33,13 @@ interface ViewContext<T = any> {
   context: HookContext
 }
 
-export type CallActionOptions<T = any> = { 
+export type ActionOptions<T = any> = { 
   subscription?: SubscriptionResolved, 
   items?: Change<T>[], 
   context?: HookContext 
 }
 
-export type CallAction<T = any> = (item: Change<T>, options?: CallActionOptions<T>) => (Promisable<void>);
+export type Action<T = any> = (item: Change<T>, options?: ActionOptions<T>) => (Promisable<void>);
 
 export type HookTriggerOptions = 
   Subscription | 
@@ -63,8 +64,10 @@ export interface Subscription {
   conditionsBefore?: Condition
   view?: TransformView
   params?: ManipulateParams
+  /** @default true */
   isBlocking?: boolean
-  callAction?: CallAction
+  action?: Action
+  /** @default false */
   fetchBefore?: boolean
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any
