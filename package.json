@@ -1,6 +1,6 @@
 {
   "name": "feathers-trigger",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Add a notification center to your feathers app.",
   "author": "fratzinger",
   "homepage": "https://feathers-trigger.netlify.app/",
