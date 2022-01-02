@@ -15,8 +15,7 @@
     "trigger",
     "actions",
     "notify",
-    "notification",
-    "authorization"
+    "notification"
   ],
   "license": "MIT",
   "main": "./dist/index.js",
