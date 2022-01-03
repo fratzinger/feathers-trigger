@@ -34,9 +34,10 @@ interface ViewContext<T = any> {
 }
 
 export type ActionOptions<T = any> = { 
-  subscription?: SubscriptionResolved, 
-  items?: Change<T>[], 
-  context?: HookContext 
+  subscription: SubscriptionResolved, 
+  items: Change<T>[], 
+  context: HookContext
+  view: Record<string, any>
 }
 
 export type Action<T = any> = (item: Change<T>, options?: ActionOptions<T>) => (Promisable<void>);

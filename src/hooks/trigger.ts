@@ -173,7 +173,7 @@ export const triggerAfter = async (
 
       const _action = sub.action || action;
 
-      const promise = _action(changeForSub, { subscription: sub, items: changes, context });
+      const promise = _action(changeForSub, { subscription: sub, items: changes, context, view: mustacheView });
 
       if (sub.isBlocking) {
         promises.push(promise);
