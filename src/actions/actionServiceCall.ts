@@ -11,7 +11,7 @@ type ActionServiceCallOptions = {
   service: string
   method: string
   id?: Id
-  data: Arrayable<AnyData>
+  data?: Arrayable<AnyData>
   params?: Params
 }
 
@@ -30,6 +30,8 @@ const actionServiceCall = <T>(
     if (["get", "update", "patch", "remove"].includes(methodName)) {
       const id = replace(_options.id, view);
       return await service[methodName](id, data, params);
+    } else if (methodName === "find") {
+      return await service[methodName](params);
     } else {
       return await service[methodName](data, params);
     }
