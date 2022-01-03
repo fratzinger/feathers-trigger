@@ -1,6 +1,6 @@
 {
   "name": "feathers-trigger",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Add triggers and actions to your feathers app.",
   "author": "fratzinger",
   "homepage": "https://feathers-trigger.netlify.app/",
