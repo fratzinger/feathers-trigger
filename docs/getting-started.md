@@ -67,7 +67,7 @@ const notifyPublished = trigger({
   conditionsData: { publishedAt: { $ne: null } },
   conditionsBefore: { publishedAt: null },
   conditionsResult: { publishedAt: { $ne: null }},
-  action: ({ item }, context) => {
+  action: ({ item }, { context }) => {
     return context.app.service('/notify').create(item);
   }
 });
@@ -133,7 +133,7 @@ import { trigger } from 'feathers-trigger';
 const notifyDelay = trigger([{
   fetchBefore: true,
   conditionsResult: { startsAt: { $gt: "{{ before.startsAt }}" }, userId: { $ne: "{{ user.id }}" } },
-  action: ({ item }, context) => {
+  action: ({ item }, { context }) => {
     return context.app.service('/notify').create(item);
   }
 }]);
