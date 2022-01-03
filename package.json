@@ -33,7 +33,8 @@
     "LICENSE",
     "README.md",
     "src/**",
-    "lib/**"
+    "lib/**",
+    "dist/**"
   ],
   "scripts": {
     "build": "shx rm -rf dist/ && tsup src/index.ts --format cjs,esm --dts",
