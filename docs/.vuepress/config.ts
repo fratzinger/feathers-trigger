@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   title: 'feathers-trigger',
   description: 'Add triggers and actions to your feathers app.',
   head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
@@ -8,13 +8,12 @@ module.exports = {
     docsDir: 'docs',
     editLinks: true,
     editLinkText: 'Edit this page on GitHub',
+    contributors: false,
     lastUpdated: true,
     sidebarDepth: 1,
-    sidebar: {
-      '/': [
-        { text: 'Getting Started', link: '/getting-started' },
-        { text: "Hooks", link: '/hooks' }
-      ]
-    }
+    sidebar: [
+      '/getting-started',
+      '/hooks'
+    ]
   }
-  }
+}

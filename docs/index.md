@@ -2,9 +2,10 @@
 home: true
 heroImage: /img/logo.svg
 heroText: feathers-trigger
-tagLine: 
-actionText: Get Started
-actionLink: ./getting-started
+actions:
+  - text: Get Started
+    link: ./getting-started
+    type: primary
 features:
 - title: Detect changes
   details: Know what exactly was changed and when it was changed
