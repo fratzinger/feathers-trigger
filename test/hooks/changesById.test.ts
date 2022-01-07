@@ -1,5 +1,5 @@
 import assert from "assert";
-import changesById from "../../src/hooks/changesById";
+import { changesById } from "../../src/hooks/changesById";
 import { Service } from "feathers-memory";
 import feathers from "@feathersjs/feathers";
 import { HookChangesByIdOptions } from "../../src/types";

@@ -1,5 +1,5 @@
 import assert from "assert";
-import trigger from "../../src/hooks/trigger";
+import { trigger } from "../../src/hooks/trigger";
 import { Service } from "feathers-memory";
 import feathers, { HookContext } from "@feathersjs/feathers";
 import { MethodName, HookTriggerOptions, Subscription, Action } from "../../src/types";

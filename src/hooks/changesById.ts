@@ -19,7 +19,7 @@ const defaultOptions: Required<HookChangesByIdOptions> = {
   fetchBefore: false
 };
 
-const changesById = <T>(
+export const changesById = <T>(
   cb: (changesById: Record<Id, Change<T>>, context: HookContext) => void | Promise<void>,
   _options?: Partial<HookChangesByIdOptions>
 ): ((context: HookContext) => Promise<HookContext>) => {
@@ -307,5 +307,3 @@ const getPath = (
     }
   }
 };
-
-export default changesById;

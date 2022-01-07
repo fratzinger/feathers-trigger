@@ -18,7 +18,7 @@ import type {
 } from "../types";
 import { Subscription } from "..";
 
-const trigger = (
+export const trigger = (
   options: HookTriggerOptions,
   action: Action
 ): ((context: HookContext) => Promise<HookContext>) => {
@@ -261,5 +261,3 @@ const testCondition = (
   const transformedConditions = transformMustache(conditions, mustacheView);
   return (sift(transformedConditions)(item)) ? transformedConditions : false;
 };
-
-export default trigger;

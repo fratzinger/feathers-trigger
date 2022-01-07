@@ -1,7 +1,8 @@
-import trigger from "./hooks/trigger";
-import changesById from "./hooks/changesById";
+// hooks
+export { trigger } from "./hooks/trigger";
+export { changesById } from "./hooks/changesById";
 
-export { trigger };
-export { changesById };
+// actions
+export { makeActionServiceCall } from "./actions/actionServiceCall";
 
 export * from "./types";

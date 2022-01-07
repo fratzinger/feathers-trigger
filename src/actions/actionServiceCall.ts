@@ -15,7 +15,7 @@ type ActionServiceCallOptions = {
   params?: Params
 }
 
-const actionServiceCall = <T>(
+export const makeActionServiceCall = <T>(
   _options: ActionServiceCallOptions
 ): Action => {
   return async (item: Change<T>, options: ActionOptions<T>) => {
@@ -37,6 +37,3 @@ const actionServiceCall = <T>(
     }
   };
 };
-
-
-export default actionServiceCall;
