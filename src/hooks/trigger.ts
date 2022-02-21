@@ -56,6 +56,11 @@ export const triggerBefore = async (
           ? await sub.conditionsData(context.data, context)
           : testCondition(context, context.data, sub.conditionsData);
         if (sub.dataResolved === false) { return; }
+
+        sub.conditionsParamsResolved = (typeof sub.conditionsParams === "function")
+          ? await sub.conditionsParams(context.data, context)
+          : testCondition(context, context.params, sub.conditionsParams);
+        if (sub.conditionsParamsResolved === false) { return; }
   
         result.push(sub);
       })
@@ -205,6 +210,7 @@ const defaultSubscription: Required<SubscriptionResolved> = {
   action: undefined,
   conditionsBefore: true,
   conditionsData: true,
+  conditionsParams: true,
   conditionsResult: true,
   dataResolved: undefined,
   beforeResolved: undefined,

@@ -63,6 +63,7 @@ export interface Subscription {
   conditionsData?: Condition
   conditionsResult?: Condition
   conditionsBefore?: Condition
+  conditionsParams?: Condition
   view?: TransformView
   params?: ManipulateParams
   /** @default true */
