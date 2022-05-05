@@ -19,8 +19,7 @@ import type {
 import { Subscription } from "..";
 
 const trigger = (
-  options: HookTriggerOptions,
-  action: Action
+  options: HookTriggerOptions
 ): ((context: HookContext) => Promise<HookContext>) => {
   if (!options) { 
     throw new Error("You should define subscriptions");
@@ -30,17 +29,16 @@ const trigger = (
     checkContext(context, null, ["create", "update", "patch", "remove"], "trigger");
     
     if (context.type === "before") {
-      return await triggerBefore(context, options, action);
+      return await triggerBefore(context, options);
     } else if (context.type === "after") {
-      return await triggerAfter(context, action);
+      return await triggerAfter(context);
     }
   };
 };
 
 export const triggerBefore = async (
   context: HookContext, 
-  options: HookTriggerOptions,
-  action?: Action
+  options: HookTriggerOptions
 ): Promise<HookContext> => {
   let subs = await getSubscriptions(context, options);
 
@@ -50,7 +48,7 @@ export const triggerBefore = async (
     const result: SubscriptionResolved[] = [];
     await Promise.all(
       subs.map(async sub => {
-        if (!sub.action && !action) { return; }
+        if (!sub.action) { return; }
 
         sub.dataResolved = (typeof sub.conditionsData === "function")
           ? await sub.conditionsData(context.data, context)
@@ -96,8 +94,7 @@ export const triggerBefore = async (
 };
 
 export const triggerAfter = async (
-  context: HookContext,
-  action?: Action
+  context: HookContext
 ): Promise<HookContext> => {  
   const subs = getConfig(context, "subscriptions");
   if (!subs?.length) { return context; }
@@ -176,7 +173,7 @@ export const triggerAfter = async (
         : testCondition(mustacheView, before, conditionsBefore);
       if (!sub.beforeResolved) { continue; }
 
-      const _action = sub.action || action;
+      const _action = sub.action;
 
       const promise = _action(changeForSub, { subscription: sub, items: changes, context, view: mustacheView });
 

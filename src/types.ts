@@ -68,7 +68,7 @@ export interface Subscription {
   params?: ManipulateParams
   /** @default true */
   isBlocking?: boolean
-  action?: Action
+  action: Action
   /** @default false */
   fetchBefore?: boolean
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

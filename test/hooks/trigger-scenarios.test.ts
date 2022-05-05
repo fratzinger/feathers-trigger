@@ -14,7 +14,6 @@ describe("trigger scenarios", function() {
     const mock = (
       hookNames: MethodName | MethodName[], 
       options: HookTriggerOptions,
-      action: Action,
       beforeHook?: (context: HookContext) => Promise<HookContext>, 
       afterHook?: (context: HookContext) => Promise<HookContext>
     ) => {
@@ -34,7 +33,7 @@ describe("trigger scenarios", function() {
       }));
       const serviceArticles = app.service("articles");
 
-      const hook = trigger(options, action);
+      const hook = trigger(options);
     
       const beforeAll = [hook];
       if (beforeHook) { beforeAll.push(beforeHook); }
@@ -97,42 +96,43 @@ describe("trigger scenarios", function() {
         },
         service: "comments",
         method: ["create", "patch"],
-        fetchBefore: true
-      }, ({ before, item }, { context }) => {
-        if (callCounter === 0) {
-          assert.deepStrictEqual(item, {
-            id: 2,
-            body: "hi2",
-            articleId: 1,
-            article: {
+        fetchBefore: true,
+        action: ({ before, item }, { context }) => {
+          if (callCounter === 0) {
+            assert.deepStrictEqual(item, {
+              id: 2,
+              body: "hi2",
+              articleId: 1,
+              article: {
+                id: 1,
+                title: "supersecret",
+                publishedAt: "2021"
+              }
+            });
+          } else if (callCounter === 1) {
+            assert.deepStrictEqual(before, {
               id: 1,
-              title: "supersecret",
-              publishedAt: "2021"
-            }
-          });
-        } else if (callCounter === 1) {
-          assert.deepStrictEqual(before, {
-            id: 1,
-            body: "hi11",
-            articleId: 1,
-            article: {
+              body: "hi11",
+              articleId: 1,
+              article: {
+                id: 1,
+                title: "supersecret",
+                publishedAt: "2021"
+              }
+            });
+            assert.deepStrictEqual(item, {
               id: 1,
-              title: "supersecret",
-              publishedAt: "2021"
-            }
-          });
-          assert.deepStrictEqual(item, {
-            id: 1,
-            body: "hi12",
-            articleId: 1,
-            article: {
-              id: 1,
-              title: "supersecret",
-              publishedAt: "2021"
-            }
-          });
+              body: "hi12",
+              articleId: 1,
+              article: {
+                id: 1,
+                title: "supersecret",
+                publishedAt: "2021"
+              }
+            });
+          }
+          callCounter++;
         }
-        callCounter++;
       });
 
       const article1 = await serviceArticles.create({ title: "supersecret", publishedAt: null });
@@ -164,7 +164,6 @@ describe("trigger scenarios", function() {
     const mock = (
       hookNames: MethodName | MethodName[], 
       options: HookTriggerOptions,
-      action: Action,
       beforeHook?: (context: HookContext) => Promise<HookContext>, 
       afterHook?: (context: HookContext) => Promise<HookContext>
     ) => {
@@ -236,7 +235,7 @@ describe("trigger scenarios", function() {
         }
       });
 
-      const hook = trigger(options, action);
+      const hook = trigger(options);
     
       const beforeAll = [hook];
       if (beforeHook) { beforeAll.push(beforeHook); }
@@ -273,11 +272,12 @@ describe("trigger scenarios", function() {
         method: ["patch", "update"],
         fetchBefore: true,
         conditionsResult: { startsAt: { $gt: "{{ before.startsAt }}" }, userId: { $ne: "{{ user.id }}" } },
-      }, ({ before, item }, { context }) => {
-        if (callCounter === 0) {
-          assert.strictEqual(item.userId, user1.id, "user is user1 on first call");
+        action: ({ before, item }, { context }) => {
+          if (callCounter === 0) {
+            assert.strictEqual(item.userId, user1.id, "user is user1 on first call");
+          }
+          callCounter++;
         }
-        callCounter++;
       });
 
       const user1 = await serviceUsers.create({ id: 1, name: "user 1" });
