@@ -29,8 +29,7 @@ describe("trigger-count.test.ts", function() {
       getCounterByParams = {};
     }
   
-    function mock(options?: HookTriggerOptions) {
-      options = options || {};
+    function mock(options: HookTriggerOptions) {
       reset();
         
       app = feathers();
@@ -41,9 +40,7 @@ describe("trigger-count.test.ts", function() {
       }));
       service = app.service("test");
       
-      const triggerHook = trigger(options, () => {
-        triggerCounter++;
-      });
+      const triggerHook = trigger(options);
       
       //@ts-expect-error hooks function not on service
       service.hooks({
@@ -93,7 +90,11 @@ describe("trigger-count.test.ts", function() {
     });
   
     it("methods without sub.params doesn't use find/get", async function() {
-      mock();
+      mock({
+        action: () => {
+          triggerCounter++;
+        }
+      });
       const item = await service.create({ test: true });
       assert.strictEqual(triggerCounter, 1);
       assert.strictEqual(findCount(), 0);
@@ -131,7 +132,12 @@ describe("trigger-count.test.ts", function() {
     });
   
     it.skip("methods with unchanged sub.params doesn't use find/get", async function() {
-      mock({ params: (params) => params });
+      mock({ 
+        params: (params) => params,
+        action: () => {
+          triggerCounter++;
+        }
+      });
       const item = await service.create({ test: true });
       assert.strictEqual(triggerCounter, 1);
       assert.strictEqual(findCount(), 0);
@@ -169,10 +175,15 @@ describe("trigger-count.test.ts", function() {
     });
   
     it("methods with sub.params uses find/get", async function() {
-      mock({ params: (params) => {
-        params.$populateParams = { name: "all" };
-        return params;
-      } });
+      mock({ 
+        params: (params) => {
+          params.$populateParams = { name: "all" };
+          return params;
+        },
+        action: () => {
+          triggerCounter++;
+        }
+      });
       const item = await service.create({ test: true });
       assert.strictEqual(triggerCounter, 1);
       assert.strictEqual(findCount(), 1);
@@ -210,7 +221,12 @@ describe("trigger-count.test.ts", function() {
     });
   
     it("methods with fetchBefore:true uses find/get", async function() {
-      mock({ fetchBefore: true });
+      mock({ 
+        fetchBefore: true,
+        action: () => {
+          triggerCounter++;
+        }
+      });
       const item = await service.create({ test: true });
       assert.strictEqual(triggerCounter, 1);
       assert.strictEqual(findCount(), 0);
@@ -248,10 +264,16 @@ describe("trigger-count.test.ts", function() {
     });
   
     it("methods with fetchBefore:true and params uses find/get twice", async function() {
-      mock({ fetchBefore: true, params: (params) => {
-        params.$populateParams = { name: "all" };
-        return params;
-      } });
+      mock({ 
+        fetchBefore: true, 
+        params: (params) => {
+          params.$populateParams = { name: "all" };
+          return params;
+        },
+        action: () => {
+          triggerCounter++;
+        }
+      });
       const item = await service.create({ test: true });
       assert.strictEqual(triggerCounter, 1);
       assert.strictEqual(findCount(), 1);
@@ -295,19 +317,28 @@ describe("trigger-count.test.ts", function() {
           params: (params) => {
             params.$populateParams = { name: "all" };
             return params;
-          } 
+          },
+          action: () => {
+            triggerCounter++;
+          }
         }, { 
           fetchBefore: true, 
           params: (params) => {
             params.$populateParams = { name: "all" };
             return params;
-          } 
+          },
+          action: () => {
+            triggerCounter++;
+          }
         }, { 
           fetchBefore: true, 
           params: (params) => {
             params.$populateParams = { name: "all" };
             return params;
-          } 
+          },
+          action: () => {
+            triggerCounter++;
+          }
         }
       ]);
   
@@ -373,8 +404,7 @@ describe("trigger-count.test.ts", function() {
       getCounterByParams = {};
     }
   
-    function mock(options?: HookTriggerOptions) {
-      options = options || {};
+    function mock(options: HookTriggerOptions) {
       reset();
         
       app = feathers();
@@ -385,13 +415,9 @@ describe("trigger-count.test.ts", function() {
       }));
       service = app.service("test");
       
-      const triggerHook1 = trigger(options, () => {
-        triggerCounter++;
-      });
+      const triggerHook1 = trigger(options);
 
-      const triggerHook2 = trigger(options, () => {
-        triggerCounter++;
-      });
+      const triggerHook2 = trigger(options);
       
       //@ts-expect-error hooks function not on service
       service.hooks({
@@ -447,19 +473,28 @@ describe("trigger-count.test.ts", function() {
           params: (params) => {
             params.$populateParams = { name: "all" };
             return params;
-          } 
+          },
+          action: () => {
+            triggerCounter++;
+          }
         }, { 
           fetchBefore: true, 
           params: (params) => {
             params.$populateParams = { name: "all" };
             return params;
-          } 
+          },
+          action: () => {
+            triggerCounter++;
+          }
         }, { 
           fetchBefore: true, 
           params: (params) => {
             params.$populateParams = { name: "all" };
             return params;
-          } 
+          },
+          action: () => {
+            triggerCounter++;
+          }
         }
       ]);
   

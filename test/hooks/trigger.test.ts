@@ -9,7 +9,6 @@ import { addDays, isBefore } from "date-fns";
 function mock(
   hookNames: MethodName | MethodName[], 
   options: HookTriggerOptions,
-  action: Action,
   beforeHook?: (context: HookContext) => Promise<HookContext>, 
   afterHook?: (context: HookContext) => Promise<HookContext>
 ) {
@@ -17,7 +16,7 @@ function mock(
   const app = feathers();
   app.use("/tests", new Service({ multi: true }));
   const service = app.service("tests");
-  const hook = trigger(options, action);
+  const hook = trigger(options);
 
   const beforeAll = [hook];
   if (beforeHook) { beforeAll.push(beforeHook); }
@@ -96,9 +95,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
-        service: "tests"
-      }, () => {
-        cbCount++;
+        service: "tests",
+        action: () => {
+          cbCount++;
+        }
       });
   
       await service.create({ id: 0, test: true });
@@ -119,9 +119,10 @@ describe("hook - trigger", function() {
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
         method: methods,
-      }, () => {
-        cbCount++;
-      });
+        action: () => {
+          cbCount++;
+        }
+      }, );
   
       await service.create({ id: 0, test: true });
       assert.strictEqual(cbCount, 1, "action cb was called");
@@ -141,10 +142,11 @@ describe("hook - trigger", function() {
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(
         methods, 
-        {},
-        () => {
-          cbCount++;
-        }
+        {
+          action: () => {
+            cbCount++;
+          }
+        },
       );
   
       await service.create({ id: 0, test: true });
@@ -165,9 +167,10 @@ describe("hook - trigger", function() {
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
         method: methods,
-        service: "tests"
-      }, () => {
-        cbCount++;
+        service: "tests",
+        action: () => {
+          cbCount++;
+        }
       });
   
       await service.create({ id: 0, test: true });
@@ -188,9 +191,10 @@ describe("hook - trigger", function() {
       const methods: MethodName[] = ["create", "update", "patch", "remove"];
       const { service } = mock(methods, {
         method: methods,
-        service: ["tests", "tests2", "tests3"]
-      }, () => {
-        cbCount++;
+        service: ["tests", "tests2", "tests3"],
+        action: () => {
+          cbCount++;
+        }
       });
   
       await service.create({ id: 0, test: true });
@@ -205,38 +209,6 @@ describe("hook - trigger", function() {
       await service.remove(0);
       assert.strictEqual(cbCount, 4, "action cb was called");
     });
-
-    it("uses `sub.action` over global action", async function() {
-      let cbCount = 0;
-      let innerCbCount = 0;
-      const methods: MethodName[] = ["create", "update", "patch", "remove"];
-      const { service } = mock(methods, [{
-        conditionsData: { test: true },
-        action: () => {
-          innerCbCount++;
-        }
-      }, {
-        conditionsData: { test: false }
-      }], () => {
-        cbCount++;
-      });
-  
-      await service.create({ id: 0, test: true });
-      assert.strictEqual(innerCbCount, 1, "inner action cb was called");
-      assert.strictEqual(cbCount, 0, "action cb wasn't called");
-  
-      await service.update(0, { id: 0, test: false });
-      assert.strictEqual(innerCbCount, 1, "inner action cb wasn't called");
-      assert.strictEqual(cbCount, 1, "action cb was called");
-  
-      await service.patch(0, { test: true });
-      assert.strictEqual(innerCbCount, 2, "inner action cb was called");
-      assert.strictEqual(cbCount, 1, "action cb wasn't called");
-  
-      await service.remove(0);
-      assert.strictEqual(innerCbCount, 2, "inner action cb wasn't called");
-      assert.strictEqual(cbCount, 1, "action cb wasn't called");
-    });
   });
 
   describe("create", function() {
@@ -244,11 +216,12 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
-        service: "tests"
-      }, (item) => {
-        cbCount++;
-        assert.deepStrictEqual(item, { before: undefined, item: { id: 0, test: true } });
-      });
+        service: "tests",
+        action: (item) => {
+          cbCount++;
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 0, test: true } });
+        }
+      }, );
 
       await service.create({ id: 0, test: true });
       assert.strictEqual(cbCount, 1, "action cb was called");
@@ -258,11 +231,12 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("create", () => ({
         method: "create",
-        service: "tests"
-      }), (item) => {
-        cbCount++;
-        assert.deepStrictEqual(item, { before: undefined, item: { id: 0, test: true } });
-      });
+        service: "tests",
+        action: (item) => {
+          cbCount++;
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 0, test: true } });
+        }
+      }));
 
       await service.create({ id: 0, test: true });
       assert.strictEqual(cbCount, 1, "action cb was called");
@@ -272,9 +246,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
-        service: "tests"
-      }, () => {
-        cbCount++;
+        service: "tests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       await service.create([{ id: 0, test: true }, { id: 1, test: true }, { id: 2, test: true }]);
@@ -285,9 +260,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
-        service: "supertests"
-      }, () => {
-        cbCount++;
+        service: "supertests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       await service.create({ id: 0, test: true });
@@ -298,9 +274,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "update",
-        service: "tests"
-      }, () => {
-        cbCount++;
+        service: "tests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       await service.create({ id: 0, test: true });
@@ -312,10 +289,11 @@ describe("hook - trigger", function() {
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        conditionsResult: { id: 1 }
-      }, (item) => {
-        cbCount++;
-        assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true } });
+        conditionsResult: { id: 1 },
+        action: (item) => {
+          cbCount++;
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true } });
+        }
       });
 
       await service.create({ id: 0, test: true });
@@ -331,10 +309,11 @@ describe("hook - trigger", function() {
         method: "create",
         service: "tests",
         conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
-        view: { criticalValue: 10 }
-      }, (item) => {
-        cbCount++;
-        assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, count: 12 } });
+        view: { criticalValue: 10 },
+        action: (item) => {
+          cbCount++;
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, count: 12 } });
+        }
       });
 
       await service.create({ id: 0, test: true, count: 9 });
@@ -353,10 +332,11 @@ describe("hook - trigger", function() {
         view: (view) => {
           view.criticalValue = 10;
           return view;
+        },
+        action: (item) => {
+          cbCount++;
+          assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, count: 12 } });
         }
-      }, (item) => {
-        cbCount++;
-        assert.deepStrictEqual(item, { before: undefined, item: { id: 1, test: true, count: 12 } });
       });
 
       await service.create({ id: 0, test: true, count: 9 });
@@ -389,7 +369,8 @@ describe("hook - trigger", function() {
           params.query ||= {};
           params.query.$select = ["id"];
           return params;
-        }
+        },
+        action
       };
       const sub2: Subscription = {
         id: 2,
@@ -399,14 +380,16 @@ describe("hook - trigger", function() {
           params.query ||= {};
           params.query.$select = ["id", "test"];
           return params;
-        }
+        },
+        action
       };
       const sub3: Subscription = {
         id: 3,
         method: "create",
-        service: "tests"
+        service: "tests",
+        action
       };
-      const { service } = mock("create", [sub1, sub2, sub3], action);
+      const { service } = mock("create", [sub1, sub2, sub3]);
 
       const result = await service.create({ id: 1, test: true, comment: "yippieh" });
       assert.strictEqual(cbCount, 3);
@@ -436,7 +419,8 @@ describe("hook - trigger", function() {
           params.query ||= {};
           params.query.$select = ["id"];
           return params;
-        }
+        },
+        action
       };
       const sub2: Subscription = {
         id: 2,
@@ -446,14 +430,16 @@ describe("hook - trigger", function() {
           params.query ||= {};
           params.query.$select = ["id", "test"];
           return params;
-        }
+        },
+        action
       };
       const sub3: Subscription = {
         id: 3,
         method: "create",
-        service: "tests"
+        service: "tests",
+        action
       };
-      const { service } = mock("create", [sub1, sub2, sub3], action);
+      const { service } = mock("create", [sub1, sub2, sub3]);
 
       const result = await service.create({ id: 1, test: true, comment: "yippieh" }, { query: { $select: ["id", "comment"] } });
       assert.strictEqual(cbCount, 3);
@@ -465,9 +451,10 @@ describe("hook - trigger", function() {
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        conditionsData: { test: true }
-      }, () => {
-        cbCount++;
+        conditionsData: { test: true },
+        action: () => {
+          cbCount++;
+        }
       });
 
       await service.create({ id: 0, test: false });
@@ -484,11 +471,12 @@ describe("hook - trigger", function() {
       const { service } = mock("update", {
         method: "update",
         service: "tests",
-        fetchBefore: true
-      }, ({ before, item }) => {
-        cbCount++;
-        assert.deepStrictEqual(before, { id: 0, test: true });
-        assert.deepStrictEqual(item, { id: 0, test: false });
+        fetchBefore: true,
+        action: ({ before, item }) => {
+          cbCount++;
+          assert.deepStrictEqual(before, { id: 0, test: true });
+          assert.deepStrictEqual(item, { id: 0, test: false });
+        }
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -502,9 +490,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("update", {
         method: "update",
-        service: "supertests"
-      }, () => {
-        cbCount++;
+        service: "supertests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -518,9 +507,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("update", {
         method: "patch",
-        service: "tests"
-      }, () => {
-        cbCount++;
+        service: "tests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -536,9 +526,10 @@ describe("hook - trigger", function() {
         method: "update",
         service: "tests",
         conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
-        view: { criticalValue: 10 }
-      }, () => {
-        cbCount++;
+        view: { criticalValue: 10 },
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true, count: 2 });
@@ -558,8 +549,9 @@ describe("hook - trigger", function() {
       const { service } = mock("update", {
         conditionsBefore: { count: 2 },
         conditionsResult: { count: 3 },
-      }, () => {
-        cbCount++;
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true, count: 2 });
@@ -581,11 +573,12 @@ describe("hook - trigger", function() {
       const { service } = mock("patch", {
         method: "patch",
         service: "tests",
-        fetchBefore: true
-      }, ({ before, item }) => {
-        cbCount++;
-        assert.deepStrictEqual(before, { id: 0, test: true });
-        assert.deepStrictEqual(item, { id: 0, test: false });
+        fetchBefore: true,
+        action: ({ before, item }) => {
+          cbCount++;
+          assert.deepStrictEqual(before, { id: 0, test: true });
+          assert.deepStrictEqual(item, { id: 0, test: false });
+        }
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -599,9 +592,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "patch",
-        service: "supertests"
-      }, () => {
-        cbCount++;
+        service: "supertests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -615,9 +609,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "update",
-        service: "tests"
-      }, () => {
-        cbCount++;
+        service: "tests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -631,9 +626,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("patch", {
         method: "patch",
-        service: "tests"
-      }, () => {
-        cbCount++;
+        service: "tests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       await service.create({ id: 0, test: true });
@@ -651,9 +647,10 @@ describe("hook - trigger", function() {
         method: "patch",
         service: "tests",
         conditionsResult: { date: { $lt: "{{ before.date }}" } },
-        fetchBefore: true
-      }, () => {
-        cbCount++;
+        fetchBefore: true,
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true, date: new Date() });
@@ -676,9 +673,10 @@ describe("hook - trigger", function() {
         conditionsResult: ({ before, item }) => {
           return isBefore(new Date(item.date), new Date(before.date));
         },
-        fetchBefore: true
-      }, () => {
-        cbCount++;
+        fetchBefore: true,
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true, date: new Date() });
@@ -705,17 +703,7 @@ describe("hook - trigger", function() {
       const calledTrigger1ById = {};
       const calledTrigger2ById = {};
 
-      const { service } = mock("patch", [
-        {
-          id: 1,
-          conditionsResult: { date: { $lt: "{{ before.date }}" } },
-          fetchBefore: true
-        },
-        {
-          id: 2,
-          conditionsResult: { test: true }
-        }
-      ], ({ before, item }, { subscription: sub }) => {
+      const action = ({ before, item }, { subscription: sub }) => {
         if (sub.id === 1) {
           if (item.id === 0) {
             assert.deepStrictEqual(sub.conditionsResult, { date: { $lt: "{{ before.date }}" } }, "conditions on id:0");
@@ -732,7 +720,21 @@ describe("hook - trigger", function() {
           assert.deepStrictEqual(sub.conditionsResult, { test: true }, "has conditionsResult");
           calledTrigger2ById[item.id] = true;
         }
-      });
+      };
+
+      const { service } = mock("patch", [
+        {
+          id: 1,
+          conditionsResult: { date: { $lt: "{{ before.date }}" } },
+          fetchBefore: true,
+          action
+        },
+        {
+          id: 2,
+          conditionsResult: { test: true },
+          action
+        }
+      ], );
 
       await service.create(items);
 
@@ -747,9 +749,10 @@ describe("hook - trigger", function() {
         method: "patch",
         service: "tests",
         conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
-        view: { criticalValue: 10 }
-      }, () => {
-        cbCount++;
+        view: { criticalValue: 10 },
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true, count: 2 });
@@ -769,8 +772,9 @@ describe("hook - trigger", function() {
       const { service } = mock("patch", {
         conditionsBefore: { count: 2 },
         conditionsResult: { count: 3 },
-      }, () => {
-        cbCount++;
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true, count: 2 });
@@ -792,11 +796,12 @@ describe("hook - trigger", function() {
       const { service } = mock("remove", {
         method: "remove",
         service: "tests",
-        fetchBefore: true
-      }, ({ before, item }) => {
-        cbCount++;
-        assert.deepStrictEqual(before, { id: 0, test: true });
-        assert.deepStrictEqual(item, { id: 0, test: true });
+        fetchBefore: true,
+        action: ({ before, item }) => {
+          cbCount++;
+          assert.deepStrictEqual(before, { id: 0, test: true });
+          assert.deepStrictEqual(item, { id: 0, test: true });
+        }
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -810,9 +815,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("remove", {
         method: "remove",
-        service: "supertests"
-      }, () => {
-        cbCount++;
+        service: "supertests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -826,9 +832,10 @@ describe("hook - trigger", function() {
       let cbCount = 0;
       const { service } = mock("remove", {
         method: "update",
-        service: "tests"
-      }, () => {
-        cbCount++;
+        service: "tests",
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true });
@@ -844,9 +851,10 @@ describe("hook - trigger", function() {
         method: "remove",
         service: "tests",
         conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
-        view: { criticalValue: 10 }
-      }, () => {
-        cbCount++;
+        view: { criticalValue: 10 },
+        action: () => {
+          cbCount++;
+        }
       });
 
       const item = await service.create({ id: 0, test: true, count: 12 });
