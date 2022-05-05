@@ -40,7 +40,7 @@ export type ActionOptions<T = any> = {
   view: Record<string, any>
 }
 
-export type Action<T = any> = (item: Change<T>, options?: ActionOptions<T>) => (Promisable<void>);
+export type Action<T = any> = (item: Change<T>, options: ActionOptions<T>) => (Promisable<void>);
 
 export type HookTriggerOptions = 
   Subscription | 
