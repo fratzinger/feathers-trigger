@@ -1,13 +1,19 @@
 import assert from "assert";
-import trigger from "../../src/hooks/trigger";
-import { Service } from "feathers-memory";
+import { trigger, HookTriggerOptions, Action } from "../../src";
+import { MemoryService } from "@feathersjs/memory";
 import { populate } from "feathers-graph-populate";
-import feathers, { HookContext } from "@feathersjs/feathers";
+import { feathers, HookContext, Id } from "@feathersjs/feathers";
 import { withResult } from "feathers-fletching";
 
 import { addDays } from "date-fns";
 
-import type { MethodName, HookTriggerOptions, Action } from "../../src/types";
+import type { MethodName } from "../../src/types.internal";
+
+declare module "@feathersjs/feathers" {
+  interface Params {
+    user?: any
+  }
+}
 
 describe("trigger scenarios", function() {
   describe("notify on comments for published articles", function() {
@@ -20,13 +26,13 @@ describe("trigger scenarios", function() {
       hookNames = (Array.isArray(hookNames)) ? hookNames : [hookNames];
       const app = feathers();
 
-      app.use("/comments", new Service({ 
+      app.use("/comments", new MemoryService({ 
         multi: true,
         id: "id",
         startId: 1
       }));
       const serviceComments = app.service("comments");
-      app.use("/articles", new Service({ 
+      app.use("/articles", new MemoryService({ 
         multi: true,
         id: "id",
         startId: 1
@@ -139,7 +145,7 @@ describe("trigger scenarios", function() {
       const comment1 = await serviceComments.create({ body: "hi", articleId: article1.id });
       assert.strictEqual(callCounter, 0, "not called cb");
 
-      const comment11 = await serviceComments.patch(comment1.id, { body: "hi11" });
+      const comment11 = await serviceComments.patch(comment1.id as Id, { body: "hi11" });
       assert.strictEqual(callCounter, 0, "not called cb");
       assert.deepStrictEqual(comment11, { id: comment11.id, body: "hi11", articleId: article1.id });
 
@@ -170,7 +176,7 @@ describe("trigger scenarios", function() {
       hookNames = (Array.isArray(hookNames)) ? hookNames : [hookNames];
       const app = feathers();
 
-      app.use("/projects", new Service({ 
+      app.use("/projects", new MemoryService({ 
         multi: true,
         id: "id",
         startId: 1
@@ -205,7 +211,7 @@ describe("trigger scenarios", function() {
         }
       });
 
-      app.use("/users", new Service({ 
+      app.use("/users", new MemoryService({ 
         multi: true,
         id: "id",
         startId: 1

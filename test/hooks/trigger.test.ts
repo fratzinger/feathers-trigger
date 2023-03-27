@@ -1,8 +1,8 @@
 import assert from "assert";
-import trigger from "../../src/hooks/trigger";
-import { Service } from "feathers-memory";
-import feathers, { HookContext } from "@feathersjs/feathers";
-import { MethodName, HookTriggerOptions, Subscription, Action } from "../../src/types";
+import { trigger, HookTriggerOptions, Subscription, Action } from "../../src";
+import { MemoryService } from "@feathersjs/memory";
+import { feathers, HookContext } from "@feathersjs/feathers";
+import { MethodName } from "../../src/types.internal";
 
 import { addDays, isBefore } from "date-fns";
 
@@ -14,7 +14,7 @@ function mock(
 ) {
   hookNames = (Array.isArray(hookNames)) ? hookNames : [hookNames];
   const app = feathers();
-  app.use("/tests", new Service({ multi: true }));
+  app.use("/tests", new MemoryService({ multi: true }));
   const service = app.service("tests");
   const hook = trigger(options);
 

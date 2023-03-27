@@ -2,30 +2,87 @@ import { checkContext } from "feathers-hooks-common";
 import { 
   changesByIdBefore, 
   changesByIdAfter, 
-  getOrFindByIdParams
+  getOrFindByIdParams,
+  ManipulateParams,
+  Change
 } from "./changesById";
 import transformMustache from "object-replace-mustache";
 import sift from "sift";
 import _cloneDeep from "lodash/cloneDeep";
 import _set from "lodash/set";
 
-import type { HookContext, Id } from "@feathersjs/feathers";
-import type {
-  HookTriggerOptions,
-  Action,
-  SubscriptionResolved,
-  Change
-} from "../types";
-import { Subscription } from "..";
+import type { HookContext, Id, Params } from "@feathersjs/feathers";
+import { Promisable } from "type-fest";
 
-const trigger = (
-  options: HookTriggerOptions
-): ((context: HookContext) => Promise<HookContext>) => {
+interface ViewContext<T = any> {
+  item: Change<T>, 
+  subscription: Subscription,
+  subscriptions: Subscription[],
+  items: Change<T>[], 
+  context: HookContext
+}
+
+export type ActionOptions<T = any> = { 
+  subscription: SubscriptionResolved, 
+  items: Change<T>[], 
+  context: HookContext
+  view: Record<string, any>
+}
+
+export type Action<T = any> = (item: Change<T>, options: ActionOptions<T>) => (Promisable<void>);
+
+
+export type HookTriggerOptions<H extends HookContext = HookContext> = 
+  Subscription | 
+  Subscription[] | 
+  ((context: H) => Promisable<Subscription | Subscription[]>)
+
+export type TransformView<T = any> = 
+  undefined | 
+  ((view: Record<string, any>, viewContext: ViewContext<T>) => Promisable<Record<string, any>>) | 
+  Record<string, any>
+
+export type Condition = 
+  true | 
+  Record<string, any> | 
+  ((item: any, context: HookContext) => Promisable<boolean>)
+
+export interface Subscription {
+  service?: string | string[]
+  method?: string | string[]
+  conditionsData?: Condition
+  conditionsResult?: Condition
+  conditionsBefore?: Condition
+  conditionsParams?: Condition
+  view?: TransformView
+  params?: ManipulateParams
+  /** @default true */
+  isBlocking?: boolean
+  action: Action
+  /** @default false */
+  fetchBefore?: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: number]: any
+}
+
+export interface SubscriptionResolved extends Subscription {
+  dataResolved: boolean | Record<string, any>
+  resultResolved: boolean | Record<string, any>
+  beforeResolved: boolean | Record<string, any>
+  paramsResolved: Params
+  identifier: string
+}
+
+export const trigger = <H extends HookContext>(
+  options: HookTriggerOptions<H>
+) => {
   if (!options) { 
     throw new Error("You should define subscriptions");
   }
 
-  return async (context: HookContext): Promise<HookContext> => {
+  return async (context: H): Promise<H> => {
     checkContext(context, null, ["create", "update", "patch", "remove"], "trigger");
     
     if (context.type === "before") {
@@ -36,10 +93,10 @@ const trigger = (
   };
 };
 
-export const triggerBefore = async (
-  context: HookContext, 
-  options: HookTriggerOptions
-): Promise<HookContext> => {
+const triggerBefore = async <H extends HookContext>(
+  context: H, 
+  options: HookTriggerOptions<H>
+): Promise<H> => {
   let subs = await getSubscriptions(context, options);
 
   if (!subs?.length) { return context; }
@@ -93,9 +150,9 @@ export const triggerBefore = async (
   return context;
 };
 
-export const triggerAfter = async (
-  context: HookContext
-): Promise<HookContext> => {  
+const triggerAfter = async <H extends HookContext>(
+  context: H
+) => {  
   const subs = getConfig(context, "subscriptions");
   if (!subs?.length) { return context; }
 
@@ -222,9 +279,9 @@ const defaultSubscription: Required<SubscriptionResolved> = {
   fetchBefore: false
 };
 
-const getSubscriptions = async (
-  context: HookContext,
-  options: HookTriggerOptions
+const getSubscriptions = async <H extends HookContext>(
+  context: H,
+  options: HookTriggerOptions<H>
 ): Promise<undefined | SubscriptionResolved[]> => {
   const _subscriptions = (typeof options === "function")
     ? await options(context)
@@ -264,5 +321,3 @@ const testCondition = (
   const transformedConditions = transformMustache(conditions, mustacheView);
   return (sift(transformedConditions)(item)) ? transformedConditions : false;
 };
-
-export default trigger;
