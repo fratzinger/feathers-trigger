@@ -121,5 +121,4 @@ $RECYCLE.BIN/
 .cache
 .temp
 docs/.vitepress/dist
-docs/.vuepress/dist
 docs/.vitepress/cache
