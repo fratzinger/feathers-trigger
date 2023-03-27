@@ -9,7 +9,29 @@ import _isEqual from "lodash/isEqual";
 import { shouldSkip } from "feathers-utils";
 
 import type { HookContext, Id, Params } from "@feathersjs/feathers";
-import type { Change, HookChangesByIdOptions, ManipulateParams } from "../types";
+import { Promisable } from "type-fest";
+
+export type Change<T = any> = {
+  before: T
+  item: T
+}
+
+export type ChangesById<T = any> = {
+  [key: string]: Change<T>
+  [key: number]: Change<T>
+}
+
+export type ManipulateParams = 
+  (params: Params, context: HookContext) => (Promisable<Params>)
+
+export interface HookChangesByIdOptions {
+  skipHooks: boolean
+  params?: ManipulateParams
+  deleteParams?: string[]
+  name?: string | string[]
+  /** @default false */
+  fetchBefore?: boolean
+}
 
 const defaultOptions: Required<HookChangesByIdOptions> = {
   skipHooks: false,
@@ -19,12 +41,23 @@ const defaultOptions: Required<HookChangesByIdOptions> = {
   fetchBefore: false
 };
 
-const changesById = <T>(
+export interface ChangesByIdParams extends Params {
+  changesById: any;
+}
+
+declare module "@feathersjs/feathers" {
+  interface Params {
+    paginate?: any;
+    changesById?: any;
+  }
+}
+
+export const changesById = <T, H extends HookContext>(
   cb: (changesById: Record<Id, Change<T>>, context: HookContext) => void | Promise<void>,
   _options?: Partial<HookChangesByIdOptions>
-): ((context: HookContext) => Promise<HookContext>) => {
+) => {
   const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
-  return async (context: HookContext): Promise<HookContext> => {
+  return async (context: H): Promise<H> => {
     if (shouldSkip("checkMulti", context)) { return context; }
 
     const pathBefore = getPath(options.name, true);
@@ -48,8 +81,8 @@ const changesById = <T>(
 
 const updateMethods = ["update", "patch"];
 
-export const changesByIdBefore = async (
-  context: HookContext, 
+export const changesByIdBefore = async <H extends HookContext>(
+  context: H, 
   _options: HookChangesByIdOptions
 ): Promise<Record<string, unknown> | unknown[]> => {
   const options: Required<HookChangesByIdOptions> = Object.assign({}, defaultOptions, _options);
@@ -72,10 +105,10 @@ export const changesByIdBefore = async (
   return byId;
 };
 
-export const changesByIdAfter = async <T>(
-  context: HookContext,
+export const changesByIdAfter = async <T, H extends HookContext>(
+  context: H,
   itemsBefore: any,
-  cb?: (changesById: Record<Id, Change<T>>, context: HookContext) => void | Promise<void>,
+  cb?: (changesById: Record<Id, Change<T>>, context: H) => void | Promise<void>,
   _options?: HookChangesByIdOptions
 ): Promise<Record<Id, Change>> => {
   if (!itemsBefore) { return; }
@@ -307,5 +340,3 @@ const getPath = (
     }
   }
 };
-
-export default changesById;

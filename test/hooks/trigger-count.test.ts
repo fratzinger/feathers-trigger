@@ -1,12 +1,18 @@
-import feathers, { Application, HookContext } from "@feathersjs/feathers";
+import { feathers, Application, HookContext } from "@feathersjs/feathers";
 import assert from "assert";
-import { Service } from "feathers-memory";
+import { MemoryService } from "@feathersjs/memory";
 import { HookTriggerOptions, trigger } from "../../src";
+
+declare module "@feathersjs/feathers" {
+  interface Params {
+    $populateParams?: any
+  }
+}
 
 describe("trigger-count.test.ts", function() {
   describe("one trigger hook", function() {
     let app: Application;
-    let service: Service;
+    let service: any;
     let findCounterByParams: Record<string, number>;
     let getCounterByParams: Record<string, number>;
     let triggerCounter: number;
@@ -33,7 +39,7 @@ describe("trigger-count.test.ts", function() {
       reset();
         
       app = feathers();
-      app.use("/test", new Service({ 
+      app.use("/test", new MemoryService({ 
         multi: true,
         id: "id",
         startId: 1
@@ -42,7 +48,6 @@ describe("trigger-count.test.ts", function() {
       
       const triggerHook = trigger(options);
       
-      //@ts-expect-error hooks function not on service
       service.hooks({
         before: {
           all: [],
@@ -381,7 +386,7 @@ describe("trigger-count.test.ts", function() {
 
   describe("two trigger hooks", function() {
     let app: Application;
-    let service: Service;
+    let service: any;
     let findCounterByParams: Record<string, number>;
     let getCounterByParams: Record<string, number>;
     let triggerCounter: number;
@@ -408,7 +413,7 @@ describe("trigger-count.test.ts", function() {
       reset();
         
       app = feathers();
-      app.use("/test", new Service({ 
+      app.use("/test", new MemoryService({ 
         multi: true,
         id: "id",
         startId: 1
@@ -419,7 +424,6 @@ describe("trigger-count.test.ts", function() {
 
       const triggerHook2 = trigger(options);
       
-      //@ts-expect-error hooks function not on service
       service.hooks({
         before: {
           all: [],

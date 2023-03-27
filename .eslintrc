@@ -5,16 +5,11 @@
     "mocha": true
   },
   "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "project": "./tsconfig.eslint.json"
-  },
   "plugins": [
-    "security",
     "@typescript-eslint"
   ],
   "extends": [
     "eslint:recommended",
-    "plugin:security/recommended",
     "plugin:@typescript-eslint/recommended"
   ],
   "rules": {
@@ -31,7 +26,6 @@
     }, {
       "enforceForRenamedProperties": false
     }],
-    "security/detect-object-injection": "off",
     "object-curly-spacing": ["warn", "always"],
     "prefer-const": ["warn"],
     "@typescript-eslint/require-await": ["error"],

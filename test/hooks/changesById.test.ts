@@ -1,12 +1,11 @@
 import assert from "assert";
-import changesById from "../../src/hooks/changesById";
-import { Service } from "feathers-memory";
-import feathers from "@feathersjs/feathers";
-import { HookChangesByIdOptions } from "../../src/types";
+import { changesById, HookChangesByIdOptions } from "../../src";
+import { MemoryService } from "@feathersjs/memory";
+import { feathers } from "@feathersjs/feathers";
 
 function mock(cb, hookName, options?: Partial<HookChangesByIdOptions>, beforeHook?, afterHook?) {
   const app = feathers();
-  app.use("/test", new Service());
+  app.use("/test", new MemoryService());
   const service = app.service("test");
   const hook = changesById(cb, options);
 
