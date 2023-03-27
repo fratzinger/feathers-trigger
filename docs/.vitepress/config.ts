@@ -19,6 +19,20 @@ export default {
       },
       { icon: 'github', link: 'https://github.com/fratzinger/feathers-trigger' }
     ],
+    sidebar: [
+      {
+        text: "Getting Started",
+        link: "/getting-started"
+        // items: [
+        //   { text: "Getting Started", link: "/getting-started" },
+        //   { text: "Hooks", link: "/hooks" },
+        // ]
+      },
+      {
+        text: "Hooks",
+        link: "/hooks"
+      }
+    ],
     nav: [
       
       {
