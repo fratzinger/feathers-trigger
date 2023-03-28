@@ -14,27 +14,26 @@ import _set from "lodash/set";
 import type { HookContext, Id, Params } from "@feathersjs/feathers";
 import { Promisable } from "type-fest";
 
-interface ViewContext<T = any> {
+interface ViewContext<T = any, H extends HookContext = HookContext> {
   item: Change<T>, 
-  subscription: Subscription,
-  subscriptions: Subscription[],
+  subscription: Subscription<H>,
+  subscriptions: Subscription<H>[],
   items: Change<T>[], 
   context: HookContext
 }
 
-export type ActionOptions<T = any> = { 
+export type ActionOptions<T = any, H extends HookContext = HookContext> = { 
   subscription: SubscriptionResolved, 
   items: Change<T>[], 
-  context: HookContext
+  context: H
   view: Record<string, any>
 }
 
-export type Action<T = any> = (item: Change<T>, options: ActionOptions<T>) => (Promisable<void>);
-
+export type Action<T = any, H extends HookContext = HookContext> = (item: Change<T>, options: ActionOptions<T, H>) => (Promisable<void>);
 
 export type HookTriggerOptions<H extends HookContext = HookContext> = 
-  Subscription | 
-  Subscription[] | 
+  Subscription<H> | 
+  Subscription<H>[] | 
   ((context: H) => Promisable<Subscription | Subscription[]>)
 
 export type TransformView<T = any> = 
@@ -47,7 +46,7 @@ export type Condition =
   Record<string, any> | 
   ((item: any, context: HookContext) => Promisable<boolean>)
 
-export interface Subscription {
+export interface Subscription<H extends HookContext = HookContext> {
   service?: string | string[]
   method?: string | string[]
   conditionsData?: Condition
@@ -58,7 +57,7 @@ export interface Subscription {
   params?: ManipulateParams
   /** @default true */
   isBlocking?: boolean
-  action: Action
+  action: Action<H>
   /** @default false */
   fetchBefore?: boolean
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
