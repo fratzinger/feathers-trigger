@@ -318,7 +318,7 @@ const resultById = async <H extends HookContext>(
   }, {});
 };
 
-const getIdField = (context: Pick<H, "service">): string => {
+const getIdField = (context: Pick<HookContext, "service">): string => {
   return context.service.options.id;
 };
 
