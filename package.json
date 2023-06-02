@@ -8,6 +8,9 @@
     "type": "git",
     "url": "https://github.com/fratzinger/feathers-trigger"
   },
+  "engines": {
+    "node": ">= 16"
+  },
   "keywords": [
     "feathers",
     "feathers.js",
