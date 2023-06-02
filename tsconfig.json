@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "outDir": "dist",
-    "moduleResolution": "node",
-    "target": "es2015",
-    "module": "commonjs",
+    "moduleResolution": "Node",
+    "target": "ESNext",
+    "module": "ESNext",
     "downlevelIteration": true,
     "sourceMap": false,
     "declaration": true
