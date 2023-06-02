@@ -21,12 +21,12 @@ export type ChangesById<T = any> = {
   [key: number]: Change<T>
 }
 
-export type ManipulateParams = 
-  (params: Params, context: HookContext) => (Promisable<Params>)
+export type ManipulateParams<H extends HookContext = HookContext> = 
+  (params: Params, context: H) => (Promisable<Params>)
 
-export interface HookChangesByIdOptions {
+export interface HookChangesByIdOptions<H extends HookContext = HookContext> {
   skipHooks: boolean
-  params?: ManipulateParams
+  params?: ManipulateParams<H>
   deleteParams?: string[]
   name?: string | string[]
   /** @default false */
@@ -52,11 +52,11 @@ declare module "@feathersjs/feathers" {
   }
 }
 
-export const changesById = <T, H extends HookContext>(
-  cb: (changesById: Record<Id, Change<T>>, context: HookContext) => void | Promise<void>,
-  _options?: Partial<HookChangesByIdOptions>
+export const changesById = <H extends HookContext, T = any>(
+  cb: (changesById: Record<Id, Change<T>>, context: H) => void | Promise<void>,
+  _options?: Partial<HookChangesByIdOptions<H>>
 ) => {
-  const options: HookChangesByIdOptions = Object.assign({}, defaultOptions, _options);
+  const options: HookChangesByIdOptions<H> = Object.assign({}, defaultOptions, _options);
   return async (context: H): Promise<H> => {
     if (shouldSkip("checkMulti", context)) { return context; }
 
@@ -83,9 +83,9 @@ const updateMethods = ["update", "patch"];
 
 export const changesByIdBefore = async <H extends HookContext>(
   context: H, 
-  _options: HookChangesByIdOptions
+  _options: HookChangesByIdOptions<H>
 ): Promise<Record<string, unknown> | unknown[]> => {
-  const options: Required<HookChangesByIdOptions> = Object.assign({}, defaultOptions, _options);
+  const options: Required<HookChangesByIdOptions<H>> = Object.assign({}, defaultOptions, _options);
   let byId: Record<string, unknown> | unknown[];
 
   if (
@@ -105,15 +105,15 @@ export const changesByIdBefore = async <H extends HookContext>(
   return byId;
 };
 
-export const changesByIdAfter = async <T, H extends HookContext>(
+export const changesByIdAfter = async <H extends HookContext, T = any>(
   context: H,
   itemsBefore: any,
   cb?: (changesById: Record<Id, Change<T>>, context: H) => void | Promise<void>,
-  _options?: HookChangesByIdOptions
+  _options?: HookChangesByIdOptions<H>
 ): Promise<Record<Id, Change>> => {
   if (!itemsBefore) { return; }
 
-  const options: Required<HookChangesByIdOptions> = Object.assign({}, defaultOptions, _options);
+  const options: Required<HookChangesByIdOptions<H>> = Object.assign({}, defaultOptions, _options);
 
   const items = await resultById(context, options);
   
@@ -151,10 +151,10 @@ export const changesByIdAfter = async <T, H extends HookContext>(
   return changesById;
 };
 
-export const getOrFindByIdParams = async (
-  context: HookContext,
-  makeParams: ManipulateParams,
-  options?: Pick<HookChangesByIdOptions, "deleteParams">
+export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
+  context: H,
+  makeParams: ManipulateParams<H>,
+  options?: Pick<HookChangesByIdOptions<H>, "deleteParams">
 ): Promise<Params> => {
   if (context.id == null) {
     if (context.type === "before") {
@@ -227,10 +227,10 @@ export const getOrFindByIdParams = async (
   }
 };
 
-const getOrFindById = async <T>(
-  context: HookContext, 
-  makeParams?: ManipulateParams,
-  _options?: Pick<HookChangesByIdOptions, "skipHooks" | "deleteParams"> & { byId?: boolean }
+const getOrFindById = async <H extends HookContext, T>(
+  context: H, 
+  makeParams?: ManipulateParams<H>,
+  _options?: Pick<HookChangesByIdOptions<H>, "skipHooks" | "deleteParams"> & { byId?: boolean }
 ): Promise<Record<Id, T> | T[] | undefined> => {
   const options = Object.assign({
     skipHooks: true,
@@ -271,9 +271,9 @@ const getOrFindById = async <T>(
   }
 };
 
-const resultById = async (
-  context: HookContext,
-  options?: Pick<HookChangesByIdOptions, "params" | "skipHooks" | "deleteParams">
+const resultById = async <H extends HookContext>(
+  context: H,
+  options?: Pick<HookChangesByIdOptions<H>, "params" | "skipHooks" | "deleteParams">
 ): Promise<Record<string, unknown>> => {
   if (!context.result) { return {}; }
   

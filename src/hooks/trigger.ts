@@ -14,31 +14,31 @@ import _set from "lodash/set";
 import type { HookContext, Id, Params } from "@feathersjs/feathers";
 import { Promisable } from "type-fest";
 
-interface ViewContext<T = any, H extends HookContext = HookContext> {
+interface ViewContext<H extends HookContext = HookContext, T = any> {
   item: Change<T>, 
-  subscription: Subscription<T, H>,
-  subscriptions: Subscription<T, H>[],
+  subscription: Subscription<H, T>,
+  subscriptions: Subscription<H, T>[],
   items: Change<T>[], 
   context: HookContext
 }
 
-export type ActionOptions<T = any, H extends HookContext = HookContext> = { 
+export type ActionOptions<H extends HookContext = HookContext, T = any> = { 
   subscription: SubscriptionResolved, 
   items: Change<T>[], 
   context: H
   view: Record<string, any>
 }
 
-export type Action<T = any, H extends HookContext = HookContext> = (change: Change<T>, options: ActionOptions<T, H>) => (Promisable<void>);
+export type Action<H extends HookContext = HookContext, T = any> = (change: Change<T>, options: ActionOptions<H, T>) => (Promisable<void>);
 
-export type HookTriggerOptions<T = any, H extends HookContext = HookContext> = 
-  Subscription<T, H> | 
-  Subscription<T, H>[] | 
-  ((context: H) => Promisable<Subscription<T, H> | Subscription<T, H>[]>)
+export type HookTriggerOptions<H extends HookContext = HookContext, T = any> = 
+  Subscription<H, T> | 
+  Subscription<H, T>[] | 
+  ((context: H) => Promisable<Subscription<H, T> | Subscription<H, T>[]>)
 
-export type TransformView<T = any> = 
+export type TransformView<H extends HookContext = HookContext, T = any> = 
   undefined | 
-  ((view: Record<string, any>, viewContext: ViewContext<T>) => Promisable<Record<string, any>>) | 
+  ((view: Record<string, any>, viewContext: ViewContext<H, T>) => Promisable<Record<string, any>>) | 
   Record<string, any>
 
 export type Condition<H extends HookContext> = 
@@ -46,7 +46,7 @@ export type Condition<H extends HookContext> =
   Record<string, any> | 
   ((item: any, context: H) => Promisable<boolean>)
 
-export interface Subscription<T = any, H extends HookContext = HookContext> {
+export interface Subscription<H extends HookContext = HookContext, T = any> {
   service?: string | string[]
   method?: string | string[]
   conditionsData?: Condition<H>
@@ -57,7 +57,7 @@ export interface Subscription<T = any, H extends HookContext = HookContext> {
   params?: ManipulateParams
   /** @default true */
   isBlocking?: boolean
-  action: Action<T, H>
+  action: Action<H, T>
   /** @default false */
   fetchBefore?: boolean
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,7 +75,7 @@ export interface SubscriptionResolved extends Subscription {
 }
 
 export const trigger = <H extends HookContext, T = any>(
-  options: HookTriggerOptions<T, H>
+  options: HookTriggerOptions<H, T>
 ) => {
   if (!options) { 
     throw new Error("You should define subscriptions");
@@ -94,7 +94,7 @@ export const trigger = <H extends HookContext, T = any>(
 
 const triggerBefore = async <H extends HookContext, T = any>(
   context: H, 
-  options: HookTriggerOptions<T, H>
+  options: HookTriggerOptions<H, T>
 ): Promise<H> => {
   let subs = await getSubscriptions(context, options);
 
@@ -280,7 +280,7 @@ const defaultSubscription: Required<SubscriptionResolved> = {
 
 const getSubscriptions = async <H extends HookContext, T = any>(
   context: H,
-  options: HookTriggerOptions<T, H>
+  options: HookTriggerOptions<H, T>
 ): Promise<undefined | SubscriptionResolved[]> => {
   const _subscriptions = (typeof options === "function")
     ? await options(context)
