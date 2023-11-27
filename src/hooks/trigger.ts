@@ -8,8 +8,8 @@ import {
 } from "./changesById";
 import transformMustache from "object-replace-mustache";
 import sift from "sift";
-import _cloneDeep from "lodash/cloneDeep";
-import _set from "lodash/set";
+import copy from "fast-copy";
+import _set from "lodash/set.js";
 
 import type { HookContext, Id, Params } from "@feathersjs/feathers";
 import { Promisable } from "type-fest";
@@ -316,7 +316,7 @@ const testCondition = (
     return true;
   }
 
-  conditions = _cloneDeep(conditions);
+  conditions = copy(conditions);
   const transformedConditions = transformMustache(conditions, mustacheView);
   return (sift(transformedConditions)(item)) ? transformedConditions : false;
 };

@@ -1,10 +1,10 @@
 
 import { getItems } from "feathers-hooks-common";
 
-import _cloneDeep from "lodash/cloneDeep";
-import _get from "lodash/get";
-import _set from "lodash/set";
-import _isEqual from "lodash/isEqual";
+import copy from "fast-copy";
+import _get from "lodash/get.js";
+import _set from "lodash/set.js";
+import _isEqual from "lodash/isEqual.js";
 
 import { shouldSkip } from "feathers-utils";
 
@@ -158,7 +158,7 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
 ): Promise<Params> => {
   if (context.id == null) {
     if (context.type === "before") {
-      let params = _cloneDeep(context.params);
+      let params = copy(context.params);
       delete params.changesById;
 
       if (options?.deleteParams) {

@@ -50,6 +50,7 @@
     "docs:build": "vitepress build docs"
   },
   "dependencies": {
+    "fast-copy": "^3.0.1",
     "feathers-hooks-common": "^7.0.3",
     "feathers-utils": "^3.0.0",
     "lodash": "^4.17.21",
