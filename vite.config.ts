@@ -4,14 +4,16 @@ export default defineConfig({
   test: {
     globals: true,
     coverage: {
-      provider: "c8",
+      provider: "v8",
       reporter: ["text", "lcov"],
       include: ["src/**/*.{js,ts}"],
-      exclude: ["**/*.test.{js,ts}", "src/types.ts"],
-      lines: 80,
-      functions: 80,
-      branches: 80,
-      statements: 80,
+      exclude: ["**/*.test.{js,ts}", "src/types.ts", "src/types.internal.ts"],
+      watermarks: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
     },
   },
 });
