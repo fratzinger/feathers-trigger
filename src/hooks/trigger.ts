@@ -48,7 +48,7 @@ export type TransformView<H extends HookContext = HookContext, T = any> =
 
 export type Condition<H extends HookContext, T = Record<string, any>> =
   | true
-  | T
+  | Record<string, any>
   | ((item: T, context: H) => Promisable<boolean>);
 
 export interface Subscription<
