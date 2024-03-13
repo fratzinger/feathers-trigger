@@ -8,7 +8,7 @@ describe("index", function () {
     assert.ok(changesById, "exports changesById hook");
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const sub: Subscription = {
+    const sub: Subscription<false> = {
       method: "create",
       service: "tests",
       action: () => {},

@@ -8,9 +8,9 @@ import type { MethodName } from "../../src/types.internal";
 
 import { addDays, isBefore } from "date-fns";
 
-function mock(
+function mock<const IsBatchMode extends boolean = false>(
   hookNames: MethodName | MethodName[],
-  options: HookTriggerOptions,
+  options: HookTriggerOptions<IsBatchMode>,
   beforeHook?: (context: HookContext) => Promise<HookContext>,
   afterHook?: (context: HookContext) => Promise<HookContext>,
 ) {
@@ -292,6 +292,28 @@ describe("hook - trigger", function () {
       assert.strictEqual(cbCount, 3, "action cb was called three times");
     });
 
+    it("create: triggers on multi create without condition in batch mode", async function () {
+      let cbCount = 0;
+      let changeCount = 0;
+      const { service } = mock("create", {
+        method: "create",
+        service: "tests",
+        batchMode: true,
+        action: (changes) => {
+          cbCount++;
+          changeCount = changes.length;
+        },
+      });
+
+      await service.create([
+        { id: 0, test: true },
+        { id: 1, test: true },
+        { id: 2, test: true },
+      ]);
+      assert.strictEqual(cbCount, 1, "action cb was called only a single time");
+      assert.strictEqual(changeCount, 3, "action cb was called with three change tuples")
+    });
+
     it("create: does not trigger with service mismatch", async function () {
       let cbCount = 0;
       const { service } = mock("create", {
@@ -421,7 +443,7 @@ describe("hook - trigger", function () {
         }
       };
 
-      const sub1: Subscription = {
+      const sub1: Subscription<false> = {
         id: 1,
         method: "create",
         service: "tests",
@@ -432,7 +454,7 @@ describe("hook - trigger", function () {
         },
         action,
       };
-      const sub2: Subscription = {
+      const sub2: Subscription<false> = {
         id: 2,
         method: "create",
         service: "tests",
@@ -443,7 +465,7 @@ describe("hook - trigger", function () {
         },
         action,
       };
-      const sub3: Subscription = {
+      const sub3: Subscription<false> = {
         id: 3,
         method: "create",
         service: "tests",
@@ -494,7 +516,7 @@ describe("hook - trigger", function () {
         }
       };
 
-      const sub1: Subscription = {
+      const sub1: Subscription<false> = {
         id: 1,
         method: "create",
         service: "tests",
@@ -505,7 +527,7 @@ describe("hook - trigger", function () {
         },
         action,
       };
-      const sub2: Subscription = {
+      const sub2: Subscription<false> = {
         id: 2,
         method: "create",
         service: "tests",
@@ -516,7 +538,7 @@ describe("hook - trigger", function () {
         },
         action,
       };
-      const sub3: Subscription = {
+      const sub3: Subscription<false> = {
         id: 3,
         method: "create",
         service: "tests",
