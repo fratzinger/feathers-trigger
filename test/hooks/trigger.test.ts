@@ -443,7 +443,7 @@ describe("hook - trigger", function () {
         }
       };
 
-      const sub1: Subscription<false> = {
+      const sub1: Subscription = {
         id: 1,
         method: "create",
         service: "tests",
@@ -454,7 +454,7 @@ describe("hook - trigger", function () {
         },
         action,
       };
-      const sub2: Subscription<false> = {
+      const sub2: Subscription = {
         id: 2,
         method: "create",
         service: "tests",
@@ -465,7 +465,7 @@ describe("hook - trigger", function () {
         },
         action,
       };
-      const sub3: Subscription<false> = {
+      const sub3: Subscription = {
         id: 3,
         method: "create",
         service: "tests",
@@ -516,7 +516,7 @@ describe("hook - trigger", function () {
         }
       };
 
-      const sub1: Subscription<false> = {
+      const sub1: Subscription = {
         id: 1,
         method: "create",
         service: "tests",
@@ -527,7 +527,7 @@ describe("hook - trigger", function () {
         },
         action,
       };
-      const sub2: Subscription<false> = {
+      const sub2: Subscription = {
         id: 2,
         method: "create",
         service: "tests",
@@ -538,7 +538,7 @@ describe("hook - trigger", function () {
         },
         action,
       };
-      const sub3: Subscription<false> = {
+      const sub3: Subscription = {
         id: 3,
         method: "create",
         service: "tests",
