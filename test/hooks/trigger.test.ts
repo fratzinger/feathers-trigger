@@ -8,9 +8,9 @@ import type { MethodName } from "../../src/types.internal";
 
 import { addDays, isBefore } from "date-fns";
 
-function mock<const IsBatchMode extends boolean = false>(
+function mock(
   hookNames: MethodName | MethodName[],
-  options: HookTriggerOptions<IsBatchMode>,
+  options: HookTriggerOptions,
   beforeHook?: (context: HookContext) => Promise<HookContext>,
   afterHook?: (context: HookContext) => Promise<HookContext>,
 ) {

@@ -10,7 +10,13 @@ import sift from "sift";
 import copy from "fast-copy";
 import _set from "lodash/set.js";
 
-import type { HookContext, Id, Params } from "@feathersjs/feathers";
+import type {
+  HookContext,
+  Id,
+  Paginated,
+  Params,
+  ServiceInterface,
+} from "@feathersjs/feathers";
 import type { Promisable } from "type-fest";
 
 interface ViewContext<
@@ -45,17 +51,13 @@ export type BatchAction<H extends HookContext = HookContext, T = any> = (
   changes: [change: Change<T>, options: ActionOptions<true, H, T>][]
 ) => Promisable<void>;
 
-export type HookTriggerOptions<
-  IsBatchMode extends boolean,
-  H extends HookContext = HookContext,
-  T = any,
-> =
-  | Subscription<IsBatchMode, H, T>
-  | Subscription<IsBatchMode, H, T>[]
+export type HookTriggerOptions<H extends HookContext = HookContext, T = any> =
+  | PossibleSubscriptions<H, T>
+  | PossibleSubscriptions<H, T>[]
   | ((
       context: H
     ) => Promisable<
-      Subscription<IsBatchMode, H, T> | Subscription<IsBatchMode, H, T>[]
+      PossibleSubscriptions<H, T> | PossibleSubscriptions<H, T>[]
     >);
 
 export type TransformView<
@@ -107,6 +109,11 @@ export interface Subscription<
   [key: number]: any;
 }
 
+export type PossibleSubscriptions<
+  H extends HookContext = HookContext,
+  T = Record<string, any>,
+> = Subscription<true, H, T> | Subscription<false, H, T>;
+
 export interface SubscriptionResolved<
   IsBatchMode extends boolean,
   H extends HookContext = HookContext,
@@ -121,10 +128,18 @@ export interface SubscriptionResolved<
 
 export const trigger = <
   H extends HookContext,
-  const IsBatchMode extends boolean = false,
-  T = H extends HookContext<infer app, infer S> ? S : any,
+  T = H extends HookContext<infer app, infer S>
+    ? S extends ServiceInterface<infer TT>
+      ? TT extends Paginated<infer TTT>
+        ? TTT
+        : TT extends Array<infer TTT>
+          ? TTT
+          : TT
+      : any
+    : any,
+  Options extends HookTriggerOptions<H, T> = HookTriggerOptions<H, T>,
 >(
-  options: HookTriggerOptions<IsBatchMode, H, T>
+  options: Options
 ) => {
   if (!options) {
     throw new Error("You should define subscriptions");
@@ -146,13 +161,9 @@ export const trigger = <
   };
 };
 
-const triggerBefore = async <
-  const IsBatchMode extends boolean,
-  H extends HookContext,
-  T = any,
->(
+const triggerBefore = async <H extends HookContext, T = any>(
   context: H,
-  options: HookTriggerOptions<IsBatchMode, H, T>
+  options: HookTriggerOptions<H, T>
 ): Promise<H> => {
   let subs = await getSubscriptions(context, options);
 
@@ -161,7 +172,7 @@ const triggerBefore = async <
   }
 
   if (!Array.isArray(context.data)) {
-    const result: SubscriptionResolved<IsBatchMode>[] = [];
+    const result: SubscriptionResolved<boolean>[] = [];
     await Promise.all(
       subs.map(async (sub) => {
         if (!sub.action) {
@@ -427,14 +438,10 @@ const defaultSubscription: Required<SubscriptionResolved<boolean>> = {
   fetchBefore: false,
 };
 
-const getSubscriptions = async <
-  const IsBatchMode extends boolean,
-  H extends HookContext,
-  T = any,
->(
+const getSubscriptions = async <H extends HookContext, T = any>(
   context: H,
-  options: HookTriggerOptions<IsBatchMode, H, T>
-): Promise<undefined | SubscriptionResolved<IsBatchMode, H, T>[]> => {
+  options: HookTriggerOptions<H, T>
+): Promise<undefined | SubscriptionResolved<boolean, H, T>[]> => {
   const _subscriptions =
     typeof options === "function" ? await options(context) : options;
 

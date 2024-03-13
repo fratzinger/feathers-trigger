@@ -37,7 +37,7 @@ describe("trigger-count.test.ts", function () {
       getCounterByParams = {};
     }
 
-    function mock<const IsBatchMode extends boolean = false>(options: HookTriggerOptions<IsBatchMode>) {
+    function mock(options: HookTriggerOptions) {
       reset();
 
       app = feathers();
@@ -416,7 +416,7 @@ describe("trigger-count.test.ts", function () {
       getCounterByParams = {};
     }
 
-    function mock<const IsBatchMode extends boolean = false>(options: HookTriggerOptions<IsBatchMode>) {
+    function mock(options: HookTriggerOptions) {
       reset();
 
       app = feathers();

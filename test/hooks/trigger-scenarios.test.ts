@@ -19,9 +19,9 @@ declare module "@feathersjs/feathers" {
 
 describe("trigger scenarios", function () {
   describe("notify on comments for published articles", function () {
-    const mock = <const IsBatchMode extends boolean = false>(
+    const mock = (
       hookNames: MethodName | MethodName[],
-      options: HookTriggerOptions<IsBatchMode>,
+      options: HookTriggerOptions,
       beforeHook?: (context: HookContext) => Promise<HookContext>,
       afterHook?: (context: HookContext) => Promise<HookContext>,
     ) => {
@@ -214,9 +214,9 @@ describe("trigger scenarios", function () {
   });
 
   describe("notify on projects assigned to user that get delayed", function () {
-    const mock = <const IsBatchMode extends boolean = false>(
+    const mock = (
       hookNames: MethodName | MethodName[],
-      options: HookTriggerOptions<IsBatchMode>,
+      options: HookTriggerOptions,
       beforeHook?: (context: HookContext) => Promise<HookContext>,
       afterHook?: (context: HookContext) => Promise<HookContext>,
     ) => {
