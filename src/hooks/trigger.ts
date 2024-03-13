@@ -48,7 +48,8 @@ export type Action<H extends HookContext = HookContext, T = any> = (
 ) => Promisable<void>;
 
 export type BatchAction<H extends HookContext = HookContext, T = any> = (
-  changes: [change: Change<T>, options: ActionOptions<true, H, T>][]
+  changes: [change: Change<T>, options: ActionOptions<true, H, T>][],
+  context: H
 ) => Promisable<void>;
 
 export type HookTriggerOptions<H extends HookContext = HookContext, T = any> =
@@ -379,7 +380,7 @@ const triggerAfter = async <H extends HookContext>(context: H) => {
     }
 
     if (isSubscriptionInBatchMode(sub)) {
-      const promise = sub.action(batchActionArguments);
+      const promise = sub.action(batchActionArguments, context);
 
       if (sub.isBlocking) {
         promises.push(promise);
