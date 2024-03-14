@@ -4,13 +4,14 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "outDir": "dist",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "target": "ESNext",
     "module": "ESNext",
-    "downlevelIteration": true,
     "sourceMap": false,
     "declaration": true,
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals"],
+    "strict": true,
+    "noImplicitAny": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.test.js"]

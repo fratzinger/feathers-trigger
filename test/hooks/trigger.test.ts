@@ -224,7 +224,11 @@ describe("hook - trigger", function () {
       assert.strictEqual(cbCount, 0, "action not called");
 
       // @ts-expect-error params not typed
-      await service.update(0, { id: 0, test: false }, { skipTrigger: "skipMe" });
+      await service.update(
+        0,
+        { id: 0, test: false },
+        { skipTrigger: "skipMe" },
+      );
       assert.strictEqual(cbCount, 0, "action not called");
 
       // @ts-expect-error params not typed
@@ -311,7 +315,11 @@ describe("hook - trigger", function () {
         { id: 2, test: true },
       ]);
       assert.strictEqual(cbCount, 1, "action cb was called only a single time");
-      assert.strictEqual(changeCount, 3, "action cb was called with three change tuples")
+      assert.strictEqual(
+        changeCount,
+        3,
+        "action cb was called with three change tuples",
+      );
     });
 
     it("create: does not trigger with service mismatch", async function () {
