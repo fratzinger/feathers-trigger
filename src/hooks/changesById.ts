@@ -8,7 +8,7 @@ import _isEqual from "lodash/isEqual.js";
 import { shouldSkip } from "feathers-utils";
 
 import type { HookContext, Id, Params } from "@feathersjs/feathers";
-import type { Promisable } from "type-fest";
+import type { Promisable } from "../types.internal";
 
 export type Change<T = any> = {
   before: T;
@@ -23,7 +23,7 @@ export type ChangesById<T = any> = {
 export type ManipulateParams<H extends HookContext = HookContext> = (
   params: Params,
   context: H,
-) => Promisable<Params>;
+) => Promisable<Params | null>;
 
 export interface HookChangesByIdOptions<H extends HookContext = HookContext> {
   skipHooks: boolean;
@@ -34,13 +34,13 @@ export interface HookChangesByIdOptions<H extends HookContext = HookContext> {
   fetchBefore?: boolean;
 }
 
-const defaultOptions: Required<HookChangesByIdOptions> = {
+const defaultOptions = {
   skipHooks: false,
   params: undefined,
   name: "changesById",
   deleteParams: [],
   fetchBefore: false,
-};
+} satisfies Partial<HookChangesByIdOptions>;
 
 export interface ChangesByIdParams extends Params {
   changesById: any;
@@ -57,11 +57,7 @@ export const changesById = <H extends HookContext, T = any>(
   cb: (changesById: Record<Id, Change<T>>, context: H) => void | Promise<void>,
   _options?: Partial<HookChangesByIdOptions<H>>,
 ) => {
-  const options: HookChangesByIdOptions<H> = Object.assign(
-    {},
-    defaultOptions,
-    _options,
-  );
+  const options = Object.assign({}, defaultOptions, _options);
   return async (context: H): Promise<H> => {
     if (shouldSkip("checkMulti", context)) {
       return context;
@@ -96,11 +92,7 @@ export const changesByIdBefore = async <H extends HookContext>(
   context: H,
   _options: HookChangesByIdOptions<H>,
 ): Promise<Record<string, unknown> | unknown[]> => {
-  const options: Required<HookChangesByIdOptions<H>> = Object.assign(
-    {},
-    defaultOptions,
-    _options,
-  );
+  const options = Object.assign({}, defaultOptions, _options);
   let byId: Record<string, unknown> | unknown[];
 
   if (context.method === "create" || !options.fetchBefore) {
@@ -109,11 +101,12 @@ export const changesByIdBefore = async <H extends HookContext>(
     updateMethods.includes(context.method) ||
     context.method === "remove"
   ) {
-    byId = await getOrFindById(context, options.params, {
-      skipHooks: options.skipHooks,
-    });
+    byId =
+      (await getOrFindById(context, options.params, {
+        skipHooks: options.skipHooks,
+      })) ?? {};
   } else {
-    return;
+    return [];
   }
 
   return byId;
@@ -122,18 +115,16 @@ export const changesByIdBefore = async <H extends HookContext>(
 export const changesByIdAfter = async <H extends HookContext, T = any>(
   context: H,
   itemsBefore: any,
-  cb?: (changesById: Record<Id, Change<T>>, context: H) => void | Promise<void>,
+  cb?:
+    | ((changesById: Record<Id, Change<T>>, context: H) => void | Promise<void>)
+    | null,
   _options?: HookChangesByIdOptions<H>,
-): Promise<Record<Id, Change>> => {
+): Promise<Record<Id, Change> | undefined> => {
   if (!itemsBefore) {
     return;
   }
 
-  const options: Required<HookChangesByIdOptions<H>> = Object.assign(
-    {},
-    defaultOptions,
-    _options,
-  );
+  const options = Object.assign({}, defaultOptions, _options);
 
   const items = await resultById(context, options);
 
@@ -176,9 +167,9 @@ export const changesByIdAfter = async <H extends HookContext, T = any>(
 
 export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
   context: H,
-  makeParams: ManipulateParams<H>,
+  makeParams?: ManipulateParams<H>,
   options?: Pick<HookChangesByIdOptions<H>, "deleteParams">,
-): Promise<Params> => {
+): Promise<Params | undefined> => {
   if (context.id == null) {
     if (context.type === "before") {
       let params = copy(context.params);
@@ -218,7 +209,7 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
 
       const ids = fetchedItems.map((x) => x && x[idField]);
 
-      let params: Params = {
+      let params: Params | null = {
         query: {
           [idField]: { $in: ids },
         },
@@ -226,7 +217,7 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
       };
 
       params = makeParams ? await makeParams(params, context) : params;
-      return params;
+      return params ?? {};
     }
   } else {
     if (
@@ -246,14 +237,14 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
 
     if (options?.deleteParams) {
       options.deleteParams.forEach((key) => {
-        delete params[key];
+        delete params[key as keyof typeof params];
       });
     }
 
     params =
-      typeof makeParams === "function"
+      (typeof makeParams === "function"
         ? await makeParams(params, context)
-        : params;
+        : params) ?? {};
 
     return params;
   }
@@ -320,7 +311,11 @@ const resultById = async <H extends HookContext>(
   }
 
   let items: Record<string, unknown>[];
-  let params = await getOrFindByIdParams(context, options.params, options);
+  let params: Params | null | undefined = await getOrFindByIdParams(
+    context,
+    options?.params,
+    options,
+  );
 
   if (params) {
     const contextParams = Object.assign({}, context.params);
@@ -344,7 +339,7 @@ const resultById = async <H extends HookContext>(
     items = Array.isArray(itemOrItems) ? itemOrItems : [itemOrItems];
   } else {
     items = (await getOrFindById(context, () => params, {
-      skipHooks: options.skipHooks,
+      skipHooks: options?.skipHooks ?? false,
       byId: false,
     })) as Record<string, unknown>[];
   }
