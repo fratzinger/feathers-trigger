@@ -1,52 +1,9 @@
 import assert from "assert";
-import type { HookTriggerOptions, Subscription, Action } from "../../src";
-import { trigger } from "../../src";
-import { MemoryService } from "@feathersjs/memory";
-import type { HookContext } from "@feathersjs/feathers";
-import { feathers } from "@feathersjs/feathers";
+import type { Subscription, Action } from "../../src";
 import type { MethodName } from "../../src/types.internal";
+import { mock } from "./base-mock";
 
 import { addDays, isBefore } from "date-fns";
-
-function mock(
-  hookNames: MethodName | MethodName[],
-  options: HookTriggerOptions,
-  beforeHook?: (context: HookContext) => Promise<HookContext>,
-  afterHook?: (context: HookContext) => Promise<HookContext>,
-) {
-  hookNames = Array.isArray(hookNames) ? hookNames : [hookNames];
-  const app = feathers();
-  app.use("/tests", new MemoryService({ multi: true }));
-  const service = app.service("tests");
-  const hook = trigger(options);
-
-  const beforeAll = [hook];
-  if (beforeHook) {
-    beforeAll.push(beforeHook);
-  }
-
-  const afterAll = [hook];
-  if (afterHook) {
-    afterAll.push(afterHook);
-  }
-
-  const hooks = {
-    before: {},
-    after: {},
-  };
-
-  hookNames.forEach((hookName) => {
-    hooks.before[hookName] = beforeAll;
-    hooks.after[hookName] = afterAll;
-  });
-
-  service.hooks(hooks);
-
-  return {
-    app,
-    service,
-  };
-}
 
 describe("hook - trigger", function () {
   describe("general", function () {
@@ -294,32 +251,6 @@ describe("hook - trigger", function () {
         { id: 2, test: true },
       ]);
       assert.strictEqual(cbCount, 3, "action cb was called three times");
-    });
-
-    it("create: triggers on multi create without condition in batch mode", async function () {
-      let cbCount = 0;
-      let changeCount = 0;
-      const { service } = mock("create", {
-        method: "create",
-        service: "tests",
-        batchMode: true,
-        action: (changes) => {
-          cbCount++;
-          changeCount = changes.length;
-        },
-      });
-
-      await service.create([
-        { id: 0, test: true },
-        { id: 1, test: true },
-        { id: 2, test: true },
-      ]);
-      assert.strictEqual(cbCount, 1, "action cb was called only a single time");
-      assert.strictEqual(
-        changeCount,
-        3,
-        "action cb was called with three change tuples",
-      );
     });
 
     it("create: does not trigger with service mismatch", async function () {
@@ -905,6 +836,44 @@ describe("hook - trigger", function () {
         { 0: true, 2: true },
         "called trigger2 for two items",
       );
+    });
+
+    it("patch: triggers on multi create with all conditions", async function () {
+      let cbCount = 0;
+      const { service } = mock(["create", "patch"], {
+        service: "tests",
+        conditionsBefore: {
+          test: true,
+        },
+        conditionsData: {
+          test: false,
+        },
+        conditionsResult: {
+          test: false,
+        },
+        action: (change, option) => {
+          cbCount++;
+        },
+      });
+
+      await service.create([
+        { id: 0, test: true },
+        { id: 1, test: true },
+        { id: 2, test: true },
+      ]);
+      assert.strictEqual(cbCount, 0, "action cb was not called");
+
+      await service.patch(null, {
+        test: false,
+      });
+
+      assert.strictEqual(cbCount, 3, "action cb was called three times");
+
+      await service.patch(null, {
+        test: false,
+      });
+
+      assert.strictEqual(cbCount, 3, "action cb was still called three times");
     });
 
     it("patch: triggers with custom view", async function () {
