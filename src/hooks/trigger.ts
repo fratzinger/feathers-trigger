@@ -247,7 +247,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
 
     const before = await changesByIdBefore(context, {
       skipHooks: false,
-      params: () => (sub.params ? sub.paramsResolved : null),
+      params: () => (sub.paramsResolved ? sub.paramsResolved : null),
       deleteParams: ["trigger"],
       fetchBefore: sub.fetchBefore || sub.conditionsBefore !== true,
     });
@@ -391,7 +391,7 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
       }
     }
 
-    if (isSubscriptionInBatchMode(sub)) {
+    if (isSubscriptionInBatchMode(sub) && batchActionArguments.length) {
       const promise = sub.action(batchActionArguments, context);
 
       if (sub.isBlocking) {
