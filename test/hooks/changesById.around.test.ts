@@ -219,7 +219,7 @@ describe("hook - changesById", function () {
     });
   });
 
-  describe.only("remove", function () {
+  describe("remove", function () {
     it("basic remove", async function () {
       let calledCb = false;
       const cb = (byId, context) => {
