@@ -13,6 +13,7 @@ import _set from "lodash/set.js";
 import type {
   HookContext,
   Id,
+  NextFunction,
   Paginated,
   Params,
   ServiceInterface,
@@ -154,7 +155,7 @@ export const trigger = <
     throw new Error("You should define subscriptions");
   }
 
-  return async (context: H): Promise<H> => {
+  return async (context: H, next?: NextFunction): Promise<H> => {
     checkContext(
       context,
       null,
@@ -166,6 +167,11 @@ export const trigger = <
       return await triggerBefore(context, options);
     } else if (context.type === "after") {
       return await triggerAfter(context);
+    } else if (context.type === "around" && next) {
+      context = await triggerBefore(context, options);
+      await next();
+      context = await triggerAfter(context);
+      return context;
     } else {
       return context;
     }
@@ -236,8 +242,11 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
     }
 
     sub.paramsResolved =
-      (await getOrFindByIdParams(context, sub.params, {
+      (await getOrFindByIdParams(context, {
+        params: sub.params,
         deleteParams: ["trigger"],
+        type: "before",
+        skipHooks: false,
       })) ?? {};
 
     sub.identifier = JSON.stringify(sub.paramsResolved);

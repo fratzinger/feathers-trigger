@@ -7,7 +7,7 @@ import _isEqual from "lodash/isEqual.js";
 
 import { shouldSkip } from "feathers-utils";
 
-import type { HookContext, Id, Params } from "@feathersjs/feathers";
+import type { HookContext, Id, NextFunction, Params } from "@feathersjs/feathers";
 import type { Promisable } from "../types.internal";
 
 export type Change<T = any> = {
@@ -22,7 +22,7 @@ export type ChangesById<T = any> = {
 
 export type ManipulateParams<H extends HookContext = HookContext> = (
   params: Params,
-  context: H,
+  context: H
 ) => Promisable<Params | null>;
 
 export interface HookChangesByIdOptions<H extends HookContext = HookContext> {
@@ -55,24 +55,37 @@ declare module "@feathersjs/feathers" {
 
 export const changesById = <H extends HookContext, T = any>(
   cb: (changesById: Record<Id, Change<T>>, context: H) => void | Promise<void>,
-  _options?: Partial<HookChangesByIdOptions<H>>,
+  _options?: Partial<HookChangesByIdOptions<H>>
 ) => {
-  const options = Object.assign({}, defaultOptions, _options);
-  return async (context: H): Promise<H> => {
+  const options = {
+    ...defaultOptions,
+    ..._options,
+  };
+
+  return async (
+    context: H,
+    next?: NextFunction
+  ): Promise<H> => {
     if (shouldSkip("checkMulti", context)) {
       return context;
     }
 
     const pathBefore = getPath(options.name, true);
 
-    if (context.type === "before") {
+    if (context.type === "before" || context.type === "around") {
       const changes = await changesByIdBefore(context, options);
       if (!changes) {
         return context;
       }
 
       _set(context, pathBefore, changes);
-    } else if (context.type === "after") {
+    }
+
+    if (next) {
+      await next();
+    }
+    
+    if (context.type === "after" || context.type === "around") {
       const itemsBefore = _get(context, pathBefore);
       const changes = await changesByIdAfter(context, itemsBefore, cb, options);
       if (!changes) {
@@ -86,25 +99,27 @@ export const changesById = <H extends HookContext, T = any>(
   };
 };
 
-const updateMethods = ["update", "patch"];
-
 export const changesByIdBefore = async <H extends HookContext>(
   context: H,
-  _options: HookChangesByIdOptions<H>,
+  _options: HookChangesByIdOptions<H>
 ): Promise<Record<string, unknown> | unknown[]> => {
-  const options = Object.assign({}, defaultOptions, _options);
+  const options = {
+    ...defaultOptions,
+    ..._options,
+    type: "before" as const
+  };
+
   let byId: Record<string, unknown> | unknown[];
 
   if (context.method === "create" || !options.fetchBefore) {
     byId = {};
   } else if (
-    updateMethods.includes(context.method) ||
+    context.method === "update" ||
+    context.method === "patch" ||
     context.method === "remove"
   ) {
     byId =
-      (await getOrFindById(context, options.params, {
-        skipHooks: options.skipHooks,
-      })) ?? {};
+      (await getOrFindById(context, options)) ?? {};
   } else {
     return [];
   }
@@ -118,13 +133,17 @@ export const changesByIdAfter = async <H extends HookContext, T = any>(
   cb?:
     | ((changesById: Record<Id, Change<T>>, context: H) => void | Promise<void>)
     | null,
-  _options?: HookChangesByIdOptions<H>,
+  _options?: HookChangesByIdOptions<H>
 ): Promise<Record<Id, Change> | undefined> => {
   if (!itemsBefore) {
     return;
   }
 
-  const options = Object.assign({}, defaultOptions, _options);
+  const options = {
+    ...defaultOptions,
+    ..._options,
+    type: "after" as const
+  };
 
   const items = await resultById(context, options);
 
@@ -155,7 +174,7 @@ export const changesByIdAfter = async <H extends HookContext, T = any>(
 
       return result;
     },
-    {},
+    {}
   );
 
   if (cb && typeof cb === "function") {
@@ -165,13 +184,17 @@ export const changesByIdAfter = async <H extends HookContext, T = any>(
   return changesById;
 };
 
+export type GetOrFindByIdParamsOptions<H extends HookContext = HookContext> =
+  Pick<HookChangesByIdOptions<H>, "params" | "skipHooks" | "deleteParams"> & {
+    type: "before" | "after";
+  };
+
 export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
   context: H,
-  makeParams?: ManipulateParams<H>,
-  options?: Pick<HookChangesByIdOptions<H>, "deleteParams">,
+  options: GetOrFindByIdParamsOptions<H>
 ): Promise<Params | undefined> => {
   if (context.id == null) {
-    if (context.type === "before") {
+    if (options.type === "before") {
       let params = copy(context.params);
       delete params.changesById;
 
@@ -188,12 +211,12 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
       params = Object.assign({ paginate: false }, params);
 
       params =
-        typeof makeParams === "function"
-          ? await makeParams(params, context)
+        typeof options.params === "function"
+          ? await options.params(params, context)
           : params;
       return params;
-    } else {
-      if (!makeParams && !context.params.query?.$select) {
+    } else if (options.type === "after") {
+      if (!options.params && !context.params.query?.$select) {
         return;
       }
 
@@ -216,13 +239,15 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
         paginate: false,
       };
 
-      params = makeParams ? await makeParams(params, context) : params;
+      params = options.params
+        ? await options.params(params, context)
+        : params;
       return params ?? {};
     }
   } else {
     if (
-      context.type === "after" &&
-      !makeParams &&
+      (options.type === "after") &&
+      !options.params &&
       !context.params.query?.$select
     ) {
       return;
@@ -242,33 +267,32 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
     }
 
     params =
-      (typeof makeParams === "function"
-        ? await makeParams(params, context)
+      (typeof options.params === "function"
+        ? await options.params(params, context)
         : params) ?? {};
 
     return params;
   }
 };
 
+export type GetOrFindByIdOptions<H extends HookContext = HookContext> =
+  GetOrFindByIdParamsOptions<H> & {
+    byId?: boolean;
+  };
+
 const getOrFindById = async <H extends HookContext, T>(
   context: H,
-  makeParams?: ManipulateParams<H>,
-  _options?: Pick<HookChangesByIdOptions<H>, "skipHooks" | "deleteParams"> & {
-    byId?: boolean;
-  },
+  _options: GetOrFindByIdOptions<H>,
 ): Promise<Record<Id, T> | T[] | undefined> => {
-  const options = Object.assign(
-    {
-      skipHooks: true,
-      byId: true,
-    },
-    _options,
-  );
+  const options = {
+    byId: true,
+    ..._options,
+  };
 
   let itemOrItems;
   const idField = getIdField(context);
 
-  const params = await getOrFindByIdParams(context, makeParams, options);
+  const params = await getOrFindByIdParams(context, options);
 
   if (context.id == null) {
     const method = options.skipHooks ? "_find" : "find";
@@ -301,10 +325,7 @@ const getOrFindById = async <H extends HookContext, T>(
 
 const resultById = async <H extends HookContext>(
   context: H,
-  options?: Pick<
-    HookChangesByIdOptions<H>,
-    "params" | "skipHooks" | "deleteParams"
-  >,
+  options: GetOrFindByIdParamsOptions<H>
 ): Promise<Record<string, unknown>> => {
   if (!context.result) {
     return {};
@@ -313,8 +334,7 @@ const resultById = async <H extends HookContext>(
   let items: Record<string, unknown>[];
   let params: Params | null | undefined = await getOrFindByIdParams(
     context,
-    options?.params,
-    options,
+    options
   );
 
   if (params) {
@@ -338,9 +358,11 @@ const resultById = async <H extends HookContext>(
       : itemOrItems;
     items = Array.isArray(itemOrItems) ? itemOrItems : [itemOrItems];
   } else {
-    items = (await getOrFindById(context, () => params, {
+    items = (await getOrFindById(context, {
       skipHooks: options?.skipHooks ?? false,
       byId: false,
+      params: () => params,
+      type: options.type,
     })) as Record<string, unknown>[];
   }
 
@@ -349,13 +371,13 @@ const resultById = async <H extends HookContext>(
   return items.reduce(
     (
       byId: Record<Id, Record<string, unknown>>,
-      item: Record<string, unknown>,
+      item: Record<string, unknown>
     ) => {
       const id = item[idField] as Id;
       byId[id] = item;
       return byId;
     },
-    {},
+    {}
   );
 };
 
@@ -365,7 +387,7 @@ const getIdField = (context: Pick<HookContext, "service">): string => {
 
 const getPath = (
   path: string | string[],
-  isBefore: boolean,
+  isBefore: boolean
 ): string | string[] => {
   if (isBefore) {
     if (typeof path === "string") {
