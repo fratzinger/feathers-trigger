@@ -23,19 +23,12 @@ export function mock(
 
   const hooks = {
     around: {},
-    before: {},
-    after: {},
   };
 
   hookNames.forEach((hookName) => {
-    hooks.before[hookName] = [
-      hook,
-      ...(mockOptions?.before ? [mockOptions.before] : []),
-    ];
-    hooks.after[hookName] = [
-      hook,
-      ...(mockOptions?.after ? [mockOptions.after] : []),
-    ];
+    hooks.around[hookName] = [
+      hook
+    ]
   });
 
   service.hooks(hooks);
