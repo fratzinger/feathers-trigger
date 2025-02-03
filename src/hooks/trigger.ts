@@ -135,7 +135,8 @@ export type SubscriptionResolved<
 
 export const trigger = <
   H extends HookContext,
-  T = H extends HookContext<_, infer S>
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  T = H extends HookContext<infer App, infer S>
     ? S extends ServiceInterface<infer TT>
       ? TT extends Paginated<infer TTT>
         ? TTT
