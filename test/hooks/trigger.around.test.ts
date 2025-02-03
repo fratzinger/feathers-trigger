@@ -20,7 +20,6 @@ describe("hook - trigger", function () {
         //@ts-ignore
         () =>
           mock("create", {
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
             action: () => {},
           }),
         "passes",
@@ -32,7 +31,7 @@ describe("hook - trigger", function () {
       const { service: service1 } = mock("find", {
         method: "create",
         service: "tests",
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
+
         action: () => {},
       });
 
@@ -42,7 +41,7 @@ describe("hook - trigger", function () {
       const { service: service2 } = mock("get", {
         method: "create",
         service: "tests",
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
+
         action: () => {},
       });
 

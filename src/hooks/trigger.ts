@@ -87,9 +87,9 @@ export interface SubscriptionBase<
   isBlocking?: boolean;
   /** @default false */
   fetchBefore?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   [key: string]: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   [key: number]: any;
 }
 
@@ -108,10 +108,7 @@ export type Subscription<
   T = Record<string, any>,
 > = SubscriptionStandardMode<H, T> | SubscriptionBatchMode<H, T>;
 
-export type SubscriptionResolvedBase<
-  H extends HookContext = HookContext,
-  T = Record<string, any>,
-> = {
+export type SubscriptionResolvedBase = {
   dataResolved: boolean | Record<string, any>;
   resultResolved: boolean | Record<string, any>;
   beforeResolved: boolean | Record<string, any>;
@@ -122,12 +119,12 @@ export type SubscriptionResolvedBase<
 export type SubscriptionResolvedStandardMode<
   H extends HookContext = HookContext,
   T = Record<string, any>,
-> = SubscriptionResolvedBase<H, T> & SubscriptionStandardMode<H, T>;
+> = SubscriptionResolvedBase & SubscriptionStandardMode<H, T>;
 
 export type SubscriptionResolvedBatchMode<
   H extends HookContext = HookContext,
   T = Record<string, any>,
-> = SubscriptionResolvedBase<H, T> & SubscriptionBatchMode<H, T>;
+> = SubscriptionResolvedBase & SubscriptionBatchMode<H, T>;
 
 export type SubscriptionResolved<
   H extends HookContext = HookContext,
@@ -138,7 +135,8 @@ export type SubscriptionResolved<
 
 export const trigger = <
   H extends HookContext,
-  T = H extends HookContext<infer app, infer S>
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  T = H extends HookContext<infer App, infer S>
     ? S extends ServiceInterface<infer TT>
       ? TT extends Paginated<infer TTT>
         ? TTT
@@ -249,7 +247,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
         skipHooks: false,
       })) ?? {};
 
-    sub.identifier = JSON.stringify(sub.paramsResolved);
+    sub.identifier = JSON.stringify(sub.paramsResolved.query || {});
     if (context.params.changesById?.[sub.identifier]?.itemsBefore) {
       continue;
     }

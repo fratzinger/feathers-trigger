@@ -1,6 +1,6 @@
 import assert from "assert";
 import type { HookTriggerOptions } from "../../src";
-import { trigger, Action } from "../../src";
+import { trigger } from "../../src";
 import { MemoryService } from "@feathersjs/memory";
 import { populate } from "feathers-graph-populate";
 import type { HookContext, Id } from "@feathersjs/feathers";
