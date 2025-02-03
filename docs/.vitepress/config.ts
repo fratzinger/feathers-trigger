@@ -1,6 +1,6 @@
 import { defineConfig } from "vitepress";
 
-export default defineConfig({
+export default {
   title: "feathers-trigger",
   description: "Add triggers and actions to your feathers app.",
   head: [["link", { rel: "icon", href: "/favicon.ico" }]],
@@ -64,4 +64,4 @@ export default defineConfig({
       copyright: "Copyright © 2021-present Frederik Schmatz",
     },
   },
-});
+};
