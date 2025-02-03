@@ -38,7 +38,7 @@
     "src/**",
     "dist/**"
   ],
-  "packageManager": "pnpm@8.8.0",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "build": "unbuild",
     "version": "npm run build",
