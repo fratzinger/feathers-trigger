@@ -43,7 +43,6 @@ function mock(
 
 describe("hook - changesById", function () {
   describe("general", function () {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     it.skip("can transform params", function () {});
   });
 

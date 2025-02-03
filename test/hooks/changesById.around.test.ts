@@ -4,11 +4,7 @@ import { changesById } from "../../src";
 import { MemoryService } from "@feathersjs/memory";
 import { feathers } from "@feathersjs/feathers";
 
-function mock(
-  cb,
-  hookName,
-  options?: Partial<HookChangesByIdOptions>,
-) {
+function mock(cb, hookName, options?: Partial<HookChangesByIdOptions>) {
   const app = feathers();
   app.use("/test", new MemoryService());
   const service = app.service("test");
@@ -17,7 +13,7 @@ function mock(
   service.hooks({
     around: {
       [hookName]: [hook],
-    }
+    },
   });
 
   return {
@@ -28,7 +24,6 @@ function mock(
 
 describe("hook - changesById", function () {
   describe("general", function () {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     it.skip("can transform params", function () {});
   });
 

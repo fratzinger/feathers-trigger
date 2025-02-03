@@ -8,12 +8,12 @@ import type { MethodName } from "../../src/types.internal";
 export type MockOptions = {
   before?: (context: HookContext) => Promise<HookContext>;
   after?: (context: HookContext) => Promise<HookContext>;
-}
+};
 
 export function mock(
   hookNames: MethodName | MethodName[],
   options: HookTriggerOptions,
-  mockOptions?: MockOptions
+  mockOptions?: MockOptions,
 ) {
   hookNames = Array.isArray(hookNames) ? hookNames : [hookNames];
   const app = feathers();
