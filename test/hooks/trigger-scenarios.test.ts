@@ -106,8 +106,8 @@ describe("trigger scenarios", function () {
       const { serviceArticles, serviceComments } = mock(
         ["create", "patch", "remove", "update"],
         {
-          conditionsResult: { "article.publishedAt": { $ne: null } },
-          params: (params, context) => {
+          result: { "article.publishedAt": { $ne: null } },
+          manipulateParams: (params, context) => {
             params.$populateParams = { name: "withArticle" };
             return params;
           },
@@ -333,7 +333,7 @@ describe("trigger scenarios", function () {
           service: "projects",
           method: ["patch", "update"],
           fetchBefore: true,
-          conditionsResult: {
+          result: {
             startsAt: { $gt: "{{ before.startsAt }}" },
             userId: { $ne: "{{ user.id }}" },
           },

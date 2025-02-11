@@ -285,7 +285,7 @@ describe("hook - trigger", function () {
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        conditionsResult: { id: 1 },
+        result: { id: 1 },
         action: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, {
@@ -307,7 +307,7 @@ describe("hook - trigger", function () {
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        result: { count: { $gt: "{{ criticalValue }}" } },
         view: { criticalValue: 10 },
         action: (item) => {
           cbCount++;
@@ -330,7 +330,7 @@ describe("hook - trigger", function () {
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        result: { count: { $gt: "{{ criticalValue }}" } },
         view: (view) => {
           view.criticalValue = 10;
           return view;
@@ -385,7 +385,7 @@ describe("hook - trigger", function () {
         id: 1,
         method: "create",
         service: "tests",
-        params: (params) => {
+        manipulateParams: (params) => {
           params.query ||= {};
           params.query.$select = ["id"];
           return params;
@@ -396,7 +396,7 @@ describe("hook - trigger", function () {
         id: 2,
         method: "create",
         service: "tests",
-        params: (params) => {
+        manipulateParams: (params) => {
           params.query ||= {};
           params.query.$select = ["id", "test"];
           return params;
@@ -458,7 +458,7 @@ describe("hook - trigger", function () {
         id: 1,
         method: "create",
         service: "tests",
-        params: (params) => {
+        manipulateParams: (params) => {
           params.query ||= {};
           params.query.$select = ["id"];
           return params;
@@ -469,7 +469,7 @@ describe("hook - trigger", function () {
         id: 2,
         method: "create",
         service: "tests",
-        params: (params) => {
+        manipulateParams: (params) => {
           params.query ||= {};
           params.query.$select = ["id", "test"];
           return params;
@@ -496,12 +496,12 @@ describe("hook - trigger", function () {
       );
     });
 
-    it("create: triggers on single create with conditionsData", async function () {
+    it("create: triggers on single create with data", async function () {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        conditionsData: { test: true },
+        data: { test: true },
         action: () => {
           cbCount++;
         },
@@ -575,7 +575,7 @@ describe("hook - trigger", function () {
       const { service } = mock("update", {
         method: "update",
         service: "tests",
-        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        result: { count: { $gt: "{{ criticalValue }}" } },
         view: { criticalValue: 10 },
         action: () => {
           cbCount++;
@@ -594,11 +594,11 @@ describe("hook - trigger", function () {
       assert.strictEqual(cbCount, 2, "action cb was called");
     });
 
-    it("update: calls before with conditionsBefore", async function () {
+    it("update: calls before with before", async function () {
       let cbCount = 0;
       const { service } = mock("update", {
-        conditionsBefore: { count: 2 },
-        conditionsResult: { count: 3 },
+        before: { count: 2 },
+        result: { count: 3 },
         action: () => {
           cbCount++;
         },
@@ -696,7 +696,7 @@ describe("hook - trigger", function () {
       const { service } = mock("patch", {
         method: "patch",
         service: "tests",
-        conditionsResult: { date: { $lt: "{{ before.date }}" } },
+        result: { date: { $lt: "{{ before.date }}" } },
         fetchBefore: true,
         action: () => {
           cbCount++;
@@ -724,7 +724,7 @@ describe("hook - trigger", function () {
       const { service } = mock("patch", {
         method: "patch",
         service: "tests",
-        conditionsResult: ({ before, item }) => {
+        result: ({ before, item }) => {
           return isBefore(new Date(item.date), new Date(before.date));
         },
         fetchBefore: true,
@@ -765,45 +765,26 @@ describe("hook - trigger", function () {
         if (sub.id === 1) {
           if (item.id === 0) {
             assert.deepStrictEqual(
-              sub.conditionsResult,
+              sub.result,
               { date: { $lt: "{{ before.date }}" } },
-              "conditions on id:0",
-            );
-            assert.deepStrictEqual(
-              sub.resultResolved,
-              { date: { $lt: addDays(beforeDate, 0).toISOString() } },
               "conditions on id:0",
             );
           } else if (item.id === 1) {
             assert.deepStrictEqual(
-              sub.conditionsResult,
+              sub.result,
               { date: { $lt: "{{ before.date }}" } },
               "conditions on id:0",
-            );
-            assert.deepStrictEqual(
-              sub.resultResolved,
-              { date: { $lt: addDays(beforeDate, 1).toISOString() } },
-              "conditions on id:1",
             );
           } else if (item.id === 2) {
             assert.deepStrictEqual(
-              sub.conditionsResult,
+              sub.result,
               { date: { $lt: "{{ before.date }}" } },
               "conditions on id:0",
-            );
-            assert.deepStrictEqual(
-              sub.resultResolved,
-              { date: { $lt: addDays(beforeDate, 2).toISOString() } },
-              "conditions on id:1",
             );
           }
           calledTrigger1ById[item.id] = true;
         } else if (sub.id === 2) {
-          assert.deepStrictEqual(
-            sub.conditionsResult,
-            { test: true },
-            "has conditionsResult",
-          );
+          assert.deepStrictEqual(sub.result, { test: true }, "has result");
           calledTrigger2ById[item.id] = true;
         }
       };
@@ -811,13 +792,13 @@ describe("hook - trigger", function () {
       const { service } = mock("patch", [
         {
           id: 1,
-          conditionsResult: { date: { $lt: "{{ before.date }}" } },
+          result: { date: { $lt: "{{ before.date }}" } },
           fetchBefore: true,
           action,
         },
         {
           id: 2,
-          conditionsResult: { test: true },
+          result: { test: true },
           action,
         },
       ]);
@@ -841,13 +822,13 @@ describe("hook - trigger", function () {
       let cbCount = 0;
       const { service } = mock(["create", "patch"], {
         service: "tests",
-        conditionsBefore: {
+        before: {
           test: true,
         },
-        conditionsData: {
+        data: {
           test: false,
         },
-        conditionsResult: {
+        result: {
           test: false,
         },
         action: (change, option) => {
@@ -880,7 +861,7 @@ describe("hook - trigger", function () {
       const { service } = mock("patch", {
         method: "patch",
         service: "tests",
-        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        result: { count: { $gt: "{{ criticalValue }}" } },
         view: { criticalValue: 10 },
         action: () => {
           cbCount++;
@@ -899,11 +880,11 @@ describe("hook - trigger", function () {
       assert.strictEqual(cbCount, 2, "action cb was called");
     });
 
-    it("patch: calls before with conditionsBefore", async function () {
+    it("patch: calls before with before", async function () {
       let cbCount = 0;
       const { service } = mock("patch", {
-        conditionsBefore: { count: 2 },
-        conditionsResult: { count: 3 },
+        before: { count: 2 },
+        result: { count: 3 },
         action: () => {
           cbCount++;
         },
@@ -982,7 +963,7 @@ describe("hook - trigger", function () {
       const { service } = mock("remove", {
         method: "remove",
         service: "tests",
-        conditionsResult: { count: { $gt: "{{ criticalValue }}" } },
+        result: { count: { $gt: "{{ criticalValue }}" } },
         view: { criticalValue: 10 },
         action: () => {
           cbCount++;

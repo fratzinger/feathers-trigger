@@ -143,7 +143,7 @@ describe("trigger-count.test.ts", function () {
 
     it.skip("methods with unchanged sub.params doesn't use find/get", async function () {
       mock({
-        params: (params) => params,
+        manipulateParams: (params) => params,
         action: () => {
           triggerCounter++;
         },
@@ -186,7 +186,7 @@ describe("trigger-count.test.ts", function () {
 
     it("methods with sub.params uses find/get", async function () {
       mock({
-        params: (params) => {
+        manipulateParams: (params) => {
           params.$populateParams = { name: "all" };
           return params;
         },
@@ -276,7 +276,7 @@ describe("trigger-count.test.ts", function () {
     it("methods with fetchBefore:true and params uses find/get twice", async function () {
       mock({
         fetchBefore: true,
-        params: (params) => {
+        manipulateParams: (params) => {
           params.$populateParams = { name: "all" };
           return params;
         },
@@ -324,7 +324,7 @@ describe("trigger-count.test.ts", function () {
       mock([
         {
           fetchBefore: true,
-          params: (params) => {
+          manipulateParams: (params) => {
             params.$populateParams = { name: "all" };
             return params;
           },
@@ -334,7 +334,7 @@ describe("trigger-count.test.ts", function () {
         },
         {
           fetchBefore: true,
-          params: (params) => {
+          manipulateParams: (params) => {
             params.$populateParams = { name: "all" };
             return params;
           },
@@ -344,7 +344,7 @@ describe("trigger-count.test.ts", function () {
         },
         {
           fetchBefore: true,
-          params: (params) => {
+          manipulateParams: (params) => {
             params.$populateParams = { name: "all" };
             return params;
           },
@@ -484,7 +484,7 @@ describe("trigger-count.test.ts", function () {
       mock([
         {
           fetchBefore: true,
-          params: (params) => {
+          manipulateParams: (params) => {
             params.$populateParams = { name: "all" };
             return params;
           },
@@ -494,7 +494,7 @@ describe("trigger-count.test.ts", function () {
         },
         {
           fetchBefore: true,
-          params: (params) => {
+          manipulateParams: (params) => {
             params.$populateParams = { name: "all" };
             return params;
           },
@@ -504,7 +504,7 @@ describe("trigger-count.test.ts", function () {
         },
         {
           fetchBefore: true,
-          params: (params) => {
+          manipulateParams: (params) => {
             params.$populateParams = { name: "all" };
             return params;
           },

@@ -33,13 +33,13 @@ describe("trigger batch mode", () => {
     const { service } = mock(["create", "patch"], {
       service: "tests",
       batchMode: true,
-      conditionsBefore: {
+      before: {
         test: true,
       },
-      conditionsData: {
+      data: {
         test: false,
       },
-      conditionsResult: {
+      result: {
         test: false,
       },
       action: (changes) => {
@@ -84,18 +84,18 @@ describe("trigger batch mode", () => {
     const { service } = mock(["create", "patch"], {
       service: "tests",
       batchMode: true,
-      conditionsBefore: {
+      before: {
         submittedAt: {
           $ne: null,
         },
         approvedAt: null,
       },
-      conditionsData: {
+      data: {
         approvedAt: {
           $ne: null,
         },
       },
-      conditionsResult: {
+      result: {
         approvedAt: {
           $ne: null,
         },
