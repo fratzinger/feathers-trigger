@@ -88,6 +88,9 @@ export interface SubscriptionBase<
   /** @default false */
   fetchBefore?: boolean;
 
+  /** @default false */
+  debug?: boolean;
+
   [key: string]: any;
 
   [key: number]: any;
@@ -176,6 +179,22 @@ export const trigger = <
   };
 };
 
+const makeDebug = (sub: SubscriptionBase, context: HookContext) => {
+  if (!sub.debug) {
+    return () => {};
+  }
+
+  const prepend = [
+    "[FEATHERS_TRIGGER DEBUG]",
+    ...(sub.name ? [sub.name] : []),
+    context.path,
+    context.type,
+    context.method,
+  ];
+
+  return console.log.bind(console, ...prepend);
+};
+
 const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
   context: H,
   options: HookTriggerOptions<H, T>,
@@ -186,11 +205,18 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
     return context;
   }
 
+  let debug = false;
+
   if (!Array.isArray(context.data)) {
     const result: SubscriptionResolved<H, T>[] = [];
     await Promise.all(
       subs.map(async (sub) => {
+        if (sub.debug) {
+          debug = true;
+        }
+        const log = makeDebug(sub, context);
         if (!sub.action) {
+          log("skipping because no action provided");
           return;
         }
 
@@ -201,6 +227,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
             (Array.isArray(context.params.skipTrigger) &&
               context.params.skipTrigger.includes(sub.name)))
         ) {
+          log("skipping because of context.params.skipTrigger");
           return;
         }
 
@@ -209,6 +236,10 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
             ? await sub.conditionsData(context.data, context)
             : testCondition(context, context.data, sub.conditionsData ?? {});
         if (sub.dataResolved === false) {
+          log(
+            "skipping because of conditionsData mismatch",
+            sub.conditionsData,
+          );
           return;
         }
 
@@ -221,6 +252,10 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
                 sub.conditionsParams ?? {},
               );
         if (sub.conditionsParamsResolved === false) {
+          log(
+            "skipping because of conditionsParams mismatch",
+            sub.conditionsParams,
+          );
           return;
         }
 
@@ -231,11 +266,22 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
   }
 
   if (!subs?.length) {
+    if (debug) {
+      console.log(
+        "[FEATHERS_TRIGGER DEBUG]",
+        context.path,
+        context.method,
+        "skipping because no subscriptions left",
+      );
+    }
     return context;
   }
 
   for (const sub of subs) {
+    const log = makeDebug(sub, context);
+
     if (checkConditions(sub)) {
+      log("skipping 'changesByIdBefore' because of 'checkConditions'");
       continue;
     }
 
@@ -251,6 +297,8 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
     if (context.params.changesById?.[sub.identifier]?.itemsBefore) {
       continue;
     }
+
+    log("fetching before with 'changesByIdBefore'");
 
     const before = await changesByIdBefore(context, {
       skipHooks: false,
@@ -282,6 +330,8 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
   const promises: Promisable<any>[] = [];
 
   for (const sub of subs) {
+    const log = makeDebug(sub, context);
+
     if (
       sub.name &&
       context.params.skipTrigger &&
@@ -289,16 +339,20 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
         (Array.isArray(context.params.skipTrigger) &&
           context.params.skipTrigger.includes(sub.name)))
     ) {
+      log("skipping because of context.params.skipTrigger");
       return context;
     }
 
     if (checkConditions(sub)) {
+      log("skipping 'changesByIdAfter' because of 'checkConditions'");
       continue;
     }
     const itemsBefore =
       context.params.changesById?.[sub.identifier]?.itemsBefore;
     let changesById: Record<Id, Change> | undefined;
     if (itemsBefore) {
+      log("fetching after with 'changesByIdAfter'");
+
       changesById = await changesByIdAfter(context, itemsBefore, null, {
         name: ["changesById", sub.identifier],
         params: sub.params,
@@ -313,6 +367,7 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
     changesById = context.params.changesById?.[sub.identifier];
 
     if (!changesById) {
+      log("no changesById");
       continue;
     }
 
@@ -361,6 +416,7 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
           ? await conditionsResult({ item, before }, context)
           : testCondition(mustacheView, item, conditionsResult ?? {});
       if (!sub.resultResolved) {
+        log("skipping because of conditionsResult mismatch", conditionsResult);
         continue;
       }
 
@@ -369,10 +425,12 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
           ? await conditionsBefore({ item, before }, context)
           : testCondition(mustacheView, before, conditionsBefore ?? {});
       if (!sub.beforeResolved) {
+        log("skipping because of conditionsBefore mismatch", conditionsBefore);
         continue;
       }
 
       if (isSubscriptionInBatchMode(sub)) {
+        log("adding to batchActionArguments");
         batchActionArguments.push([
           changeForSub,
           {
@@ -384,6 +442,8 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
         ]);
       } else if (isSubscriptionNormalMode(sub)) {
         const _action = sub.action;
+
+        log("running action");
 
         const promise = _action(changeForSub, {
           subscription: sub,
@@ -399,6 +459,7 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
     }
 
     if (isSubscriptionInBatchMode(sub) && batchActionArguments.length) {
+      log("running batch action");
       const promise = sub.action(batchActionArguments, context);
 
       if (sub.isBlocking) {
