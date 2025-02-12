@@ -1,6 +1,5 @@
 import { getItems } from "feathers-hooks-common";
 
-import copy from "fast-copy";
 import _get from "lodash/get.js";
 import _set from "lodash/set.js";
 import _isEqual from "lodash/isEqual.js";
@@ -31,11 +30,24 @@ export type ManipulateParams<H extends HookContext = HookContext> = (
 ) => Promisable<Params | null>;
 
 export interface HookChangesByIdOptions<H extends HookContext = HookContext> {
+  /**
+   * @default false
+   */
   skipHooks: boolean;
   params?: ManipulateParams<H>;
+  /**
+   * @default []
+   */
   deleteParams?: string[];
+  /**
+   * The name of the property to store the changesById in context.params
+   *
+   * @default "changesById"
+   */
   name?: string | string[];
-  /** @default false */
+  /**
+   * @default false
+   */
   fetchBefore?: boolean;
 }
 
@@ -196,7 +208,14 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
 ): Promise<Params | undefined> => {
   if (context.id == null) {
     if (options.type === "before") {
-      let params = copy(context.params);
+      let params = {
+        ...context.params,
+        query: {
+          ...context.params?.query,
+        },
+        paginate: false,
+      };
+
       delete params.changesById;
 
       if (options?.deleteParams) {
@@ -208,8 +227,6 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
       if (params.query?.$select) {
         delete params.query.$select;
       }
-
-      params = Object.assign({ paginate: false }, params);
 
       params =
         typeof options.params === "function"
