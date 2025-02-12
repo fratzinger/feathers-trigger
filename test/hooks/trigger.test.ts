@@ -307,8 +307,7 @@ describe("hook - trigger", function () {
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        result: { count: { $gt: "{{ criticalValue }}" } },
-        view: { criticalValue: 10 },
+        result: ({ item }) => item.count > 10,
         action: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, {
@@ -325,16 +324,12 @@ describe("hook - trigger", function () {
       assert.strictEqual(cbCount, 1, "action cb was called");
     });
 
-    it("create: triggers on single create with custom view as function", async function () {
+    it("create: triggers on single create with custom view as condition", async function () {
       let cbCount = 0;
       const { service } = mock("create", {
         method: "create",
         service: "tests",
-        result: { count: { $gt: "{{ criticalValue }}" } },
-        view: (view) => {
-          view.criticalValue = 10;
-          return view;
-        },
+        result: () => ({ count: { $gt: 10 } }),
         action: (item) => {
           cbCount++;
           assert.deepStrictEqual(item, {
@@ -575,8 +570,7 @@ describe("hook - trigger", function () {
       const { service } = mock("update", {
         method: "update",
         service: "tests",
-        result: { count: { $gt: "{{ criticalValue }}" } },
-        view: { criticalValue: 10 },
+        result: () => ({ count: { $gt: 10 } }),
         action: () => {
           cbCount++;
         },
@@ -696,7 +690,9 @@ describe("hook - trigger", function () {
       const { service } = mock("patch", {
         method: "patch",
         service: "tests",
-        result: { date: { $lt: "{{ before.date }}" } },
+        result: ({ before }) => ({
+          date: { $lt: before.date },
+        }),
         fetchBefore: true,
         action: () => {
           cbCount++;
@@ -763,28 +759,8 @@ describe("hook - trigger", function () {
 
       const action: Action = ({ before, item }, { subscription: sub }) => {
         if (sub.id === 1) {
-          if (item.id === 0) {
-            assert.deepStrictEqual(
-              sub.result,
-              { date: { $lt: "{{ before.date }}" } },
-              "conditions on id:0",
-            );
-          } else if (item.id === 1) {
-            assert.deepStrictEqual(
-              sub.result,
-              { date: { $lt: "{{ before.date }}" } },
-              "conditions on id:0",
-            );
-          } else if (item.id === 2) {
-            assert.deepStrictEqual(
-              sub.result,
-              { date: { $lt: "{{ before.date }}" } },
-              "conditions on id:0",
-            );
-          }
           calledTrigger1ById[item.id] = true;
         } else if (sub.id === 2) {
-          assert.deepStrictEqual(sub.result, { test: true }, "has result");
           calledTrigger2ById[item.id] = true;
         }
       };
@@ -792,7 +768,7 @@ describe("hook - trigger", function () {
       const { service } = mock("patch", [
         {
           id: 1,
-          result: { date: { $lt: "{{ before.date }}" } },
+          result: ({ before }) => ({ date: { $lt: before.date } }),
           fetchBefore: true,
           action,
         },
@@ -861,8 +837,7 @@ describe("hook - trigger", function () {
       const { service } = mock("patch", {
         method: "patch",
         service: "tests",
-        result: { count: { $gt: "{{ criticalValue }}" } },
-        view: { criticalValue: 10 },
+        result: () => ({ count: { $gt: 10 } }),
         action: () => {
           cbCount++;
         },
@@ -963,8 +938,7 @@ describe("hook - trigger", function () {
       const { service } = mock("remove", {
         method: "remove",
         service: "tests",
-        result: { count: { $gt: "{{ criticalValue }}" } },
-        view: { criticalValue: 10 },
+        result: () => ({ count: { $gt: 10 } }),
         action: () => {
           cbCount++;
         },

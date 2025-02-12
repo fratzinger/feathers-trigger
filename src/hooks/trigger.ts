@@ -5,9 +5,7 @@ import {
   changesByIdAfter,
   getOrFindByIdParams,
 } from "./changesById";
-import { replace as transformMustache } from "object-replace-mustache";
 import sift from "sift";
-import copy from "fast-copy";
 import _set from "lodash/set.js";
 
 import type {
@@ -19,19 +17,10 @@ import type {
 } from "@feathersjs/feathers";
 import type { MaybeArray, Promisable } from "../types.internal";
 
-interface ViewContext<H extends HookContext = HookContext, T = any> {
-  item: Change<T>;
-  subscription: Subscription<H, T>;
-  subscriptions: Subscription<H, T>[];
-  items: Change<T>[];
-  context: HookContext;
-}
-
 export type ActionOptions<H extends HookContext = HookContext, T = any> = {
   subscription: Subscription<H, T>;
   items: Change<T>[];
   context: H;
-  view: Record<string, any>;
 };
 
 export type Action<H extends HookContext = HookContext, T = any> = (
@@ -48,18 +37,12 @@ export type HookTriggerOptions<H extends HookContext = HookContext, T = any> =
   | MaybeArray<Subscription<H, T>>
   | ((context: H) => Promisable<MaybeArray<Subscription<H, T>>>);
 
-export type TransformView<H extends HookContext = HookContext, T = any> =
-  | undefined
-  | ((
-      view: Record<string, any>,
-      viewContext: ViewContext<H, T>,
-    ) => Promisable<Record<string, any>>)
-  | Record<string, any>;
-
 export type Condition<
   H extends HookContext = HookContext,
   T = Record<string, any>,
-> = Record<string, any> | ((item: T, context: H) => Promisable<boolean>);
+> =
+  | Record<string, any>
+  | ((item: T, context: H) => Promisable<boolean | Record<string, any>>);
 
 export type ConditionChange<
   H extends HookContext = HookContext,
@@ -67,12 +50,12 @@ export type ConditionChange<
 > =
   | Record<string, any>
   | ((
-      item: {
+      change: {
         item: T;
         before: T | undefined;
       },
       context: H,
-    ) => Promisable<boolean>);
+    ) => Promisable<boolean | Record<string, any>>);
 
 export interface SubscriptionBase<
   H extends HookContext = HookContext,
@@ -86,11 +69,12 @@ export interface SubscriptionBase<
   name?: string;
   service?: string | string[];
   method?: string | string[];
+
   data?: Condition<H, T>;
   result?: ConditionChange<H, T>;
   before?: Condition<H, T>;
   params?: Condition<H, T>;
-  view?: TransformView<H, T>;
+
   manipulateParams?: ManipulateParams;
   /**
    * @default true
@@ -227,24 +211,26 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
           return;
         }
 
+        // test data
         if (
+          sub.data !== undefined &&
           !(await testCondition({
             condition: sub.data,
             item: context.data,
             context,
-            view: context,
           }))
         ) {
           log("skipping because of data mismatch");
           return;
         }
 
+        // test params
         if (
+          sub.params !== undefined &&
           !(await testCondition({
             condition: sub.params,
             item: context.params,
             context,
-            view: context,
           }))
         ) {
           log("skipping because of params mismatch");
@@ -366,43 +352,14 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
       const { item } = change;
 
       const changeForSub = change;
-
-      let mustacheView: Record<string, unknown> = {
-        item,
-        before,
-        data: context.data,
-        id: context.id,
-        method: context.method,
-        now,
-        params: context.params,
-        path: context.path,
-        service: context.service,
-        type: context.type,
-        user: context.params?.user,
-      };
-
-      if (sub.view) {
-        if (typeof sub.view === "function") {
-          mustacheView = await sub.view(mustacheView, {
-            item: changeForSub,
-            items: changes,
-            subscription: sub,
-            subscriptions: subs,
-            context,
-          });
-        } else {
-          mustacheView = Object.assign(mustacheView, sub.view);
-        }
-      }
-
       if (
+        sub.result !== undefined &&
         !(await testCondition({
           item,
           before,
           withBefore: true,
           condition: sub.result,
           context,
-          view: mustacheView,
         }))
       ) {
         log("skipping because of result mismatch");
@@ -410,13 +367,13 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
       }
 
       if (
+        sub.before !== undefined &&
         !(await testCondition({
           item,
           before,
           testItem: "before",
           condition: sub.before,
           context,
-          view: mustacheView,
         }))
       ) {
         log("skipping because of before mismatch", before);
@@ -431,7 +388,6 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
             subscription: sub,
             items: changes,
             context,
-            view: mustacheView,
           },
         ]);
       } else if (isSubscriptionNormalMode(sub)) {
@@ -443,7 +399,6 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
           subscription: sub,
           items: changes,
           context,
-          view: mustacheView,
         });
 
         if (sub.isBlocking) {
@@ -543,7 +498,6 @@ type TestConditionOptions = {
   withBefore?: boolean;
   condition: Condition | ConditionChange | undefined;
   context: HookContext;
-  view: Record<string, any>;
 };
 
 const testCondition = async (
@@ -555,11 +509,18 @@ const testCondition = async (
 
   const { item, before, context, testItem = "item" } = options;
 
+  let condition: Record<string, any> | boolean;
+
   if (typeof options.condition === "function") {
     const data = options.withBefore ? { item, before } : item;
-    return await options.condition(data, context);
+    condition = await options.condition(data, context);
+  } else {
+    condition = options.condition;
   }
 
-  const condition = copy(options.condition);
-  return sift(transformMustache(condition, options.view))(options[testItem]);
+  if (typeof condition === "boolean") {
+    return condition;
+  }
+
+  return sift(condition)(options[testItem]);
 };

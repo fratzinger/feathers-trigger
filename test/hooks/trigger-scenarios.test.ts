@@ -333,9 +333,11 @@ describe("trigger scenarios", function () {
           service: "projects",
           method: ["patch", "update"],
           fetchBefore: true,
-          result: {
-            startsAt: { $gt: "{{ before.startsAt }}" },
-            userId: { $ne: "{{ user.id }}" },
+          result: ({ item, before }, context) => {
+            return {
+              startsAt: { $gt: before.startsAt },
+              userId: { $ne: context.params.user.id },
+            };
           },
           action: ({ before, item }, { context }) => {
             if (callCounter === 0) {
