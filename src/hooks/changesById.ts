@@ -31,11 +31,24 @@ export type ManipulateParams<H extends HookContext = HookContext> = (
 ) => Promisable<Params | null>;
 
 export interface HookChangesByIdOptions<H extends HookContext = HookContext> {
+  /**
+   * @default false
+   */
   skipHooks: boolean;
   params?: ManipulateParams<H>;
+  /**
+   * @default []
+   */
   deleteParams?: string[];
+  /**
+   * The name of the property to store the changesById in context.params
+   *
+   * @default "changesById"
+   */
   name?: string | string[];
-  /** @default false */
+  /**
+   * @default false
+   */
   fetchBefore?: boolean;
 }
 

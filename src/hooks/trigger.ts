@@ -17,7 +17,7 @@ import type {
   Paginated,
   ServiceInterface,
 } from "@feathersjs/feathers";
-import type { Promisable } from "../types.internal";
+import type { MaybeArray, Promisable } from "../types.internal";
 
 interface ViewContext<H extends HookContext = HookContext, T = any> {
   item: Change<T>;
@@ -45,11 +45,8 @@ export type BatchAction<H extends HookContext = HookContext, T = any> = (
 ) => Promisable<void>;
 
 export type HookTriggerOptions<H extends HookContext = HookContext, T = any> =
-  | Subscription<H, T>
-  | (Subscription<H, T>[] & { batchMode?: never })
-  | (((context: H) => Promisable<Subscription<H, T> | Subscription<H, T>[]>) & {
-      batchMode?: never;
-    });
+  | MaybeArray<Subscription<H, T>>
+  | ((context: H) => Promisable<MaybeArray<Subscription<H, T>>>);
 
 export type TransformView<H extends HookContext = HookContext, T = any> =
   | undefined
@@ -68,8 +65,14 @@ export type ConditionChange<
   H extends HookContext = HookContext,
   T = Record<string, any>,
 > =
-  | { item: Record<string, any>; before: Record<string, any> | undefined }
-  | ((item: T, context: H) => Promisable<boolean>);
+  | Record<string, any>
+  | ((
+      item: {
+        item: T;
+        before: T | undefined;
+      },
+      context: H,
+    ) => Promisable<boolean>);
 
 export interface SubscriptionBase<
   H extends HookContext = HookContext,
@@ -89,39 +92,47 @@ export interface SubscriptionBase<
   params?: Condition<H, T>;
   view?: TransformView<H, T>;
   manipulateParams?: ManipulateParams;
-  /** @default true */
+  /**
+   * @default true
+   */
   isBlocking?: boolean;
-  /** @default false */
+  /**
+   * @default false
+   */
   fetchBefore?: boolean;
 
-  /** @default false */
+  /**
+   * @default false
+   */
   debug?: boolean;
-
-  [key: string]: any;
-
-  [key: number]: any;
 }
 
-export type SubscriptionStandardMode<
+export type SubscriptionSingleAction<
   H extends HookContext = HookContext,
   T = Record<string, any>,
 > = {
-  batchMode?: false;
   action: Action<H, T>;
 } & SubscriptionBase<H, T>;
 
-export type SubscriptionBatchMode<
+export type SubscriptionBatchAction<
   H extends HookContext = HookContext,
   T = Record<string, any>,
 > = {
-  batchMode: true;
-  action: BatchAction<H, T>;
+  batchAction: BatchAction<H, T>;
 } & SubscriptionBase<H, T>;
 
 export type Subscription<
   H extends HookContext = HookContext,
   T = Record<string, any>,
-> = SubscriptionStandardMode<H, T> | SubscriptionBatchMode<H, T>;
+> = SubscriptionSingleAction<H, T> | SubscriptionBatchAction<H, T>;
+
+export type SubscriptionResolved<
+  H extends HookContext = HookContext,
+  T = Record<string, any>,
+> = Subscription<H, T> & {
+  identifier?: string;
+  paramsResolved?: Record<string, any>;
+};
 
 export const trigger = <
   H extends HookContext,
@@ -135,9 +146,8 @@ export const trigger = <
           : TT
       : any
     : any,
-  Options extends HookTriggerOptions<H, T> = HookTriggerOptions<H, T>,
 >(
-  options: Options,
+  options: HookTriggerOptions<H, T>,
 ) => {
   if (!options) {
     throw new Error("You should define subscriptions");
@@ -201,7 +211,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
           debug = true;
         }
         const log = makeDebug(sub as any, context);
-        if (!sub.action) {
+        if (!("action" in sub) && !("batchAction" in sub)) {
           log("skipping because no action provided");
           return;
         }
@@ -291,13 +301,13 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
     );
   }
 
-  setConfig(context, "subscriptions", subs);
+  setConfig(context, subs);
 
   return context;
 };
 
 const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
-  const subs = getConfig(context, "subscriptions");
+  const subs = getConfig(context);
   if (!subs?.length) {
     return context;
   }
@@ -320,10 +330,11 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
       return context;
     }
 
-    const itemsBefore =
-      context.params.changesById?.[sub.identifier]?.itemsBefore;
+    const itemsBefore = sub.identifier
+      ? context.params.changesById?.[sub.identifier]?.itemsBefore
+      : undefined;
     let changesById: Record<Id, Change> | undefined;
-    if (itemsBefore) {
+    if (sub.identifier && itemsBefore) {
       log("fetching after with 'changesByIdAfter'");
 
       changesById = await changesByIdAfter(context, itemsBefore, null, {
@@ -337,7 +348,9 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
       _set(context, ["params", "changesById", sub.identifier], changesById);
     }
 
-    changesById = context.params.changesById?.[sub.identifier];
+    changesById = sub.identifier
+      ? context.params.changesById?.[sub.identifier]
+      : undefined;
 
     if (!changesById) {
       log("no changesById");
@@ -441,7 +454,7 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
 
     if (isSubscriptionInBatchMode(sub) && batchActionArguments.length) {
       log("running batch action");
-      const promise = sub.action(batchActionArguments, context);
+      const promise = sub.batchAction(batchActionArguments, context);
 
       if (sub.isBlocking) {
         promises.push(promise);
@@ -454,39 +467,26 @@ const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
   return context;
 };
 
+const CONFIG_KEY = "subscriptions" as const;
+
 function setConfig(
   context: HookContext,
-  key: "subscriptions",
-  val: Subscription<any, any>[],
-): void;
-function setConfig(context: HookContext, key: string, val: unknown): void {
+  val: SubscriptionResolved<any, any>[],
+): void {
   context.params.trigger = context.params.trigger || {};
-  context.params.trigger[key] = val;
+  context.params.trigger[CONFIG_KEY] = val;
 }
 
 function getConfig(
   context: HookContext,
-  key: "subscriptions",
-): undefined | Subscription[];
-function getConfig(
-  context: HookContext,
-  key: string,
-): undefined | Subscription[] {
-  return context.params.trigger?.[key];
+): SubscriptionResolved<any, any>[] | undefined {
+  return context.params.trigger?.[CONFIG_KEY];
 }
-
-const defaultSubscription: Partial<Subscription> = {
-  name: undefined,
-  isBlocking: true,
-  batchMode: false,
-  identifier: "default",
-  fetchBefore: false,
-};
 
 const getSubscriptions = async <H extends HookContext, T = any>(
   context: H,
   options: HookTriggerOptions<H, T>,
-): Promise<undefined | Subscription<H, T>[]> => {
+): Promise<undefined | SubscriptionResolved<H, T>[]> => {
   const _subscriptionOrSubscriptions =
     typeof options === "function" ? await options(context) : options;
 
@@ -499,7 +499,11 @@ const getSubscriptions = async <H extends HookContext, T = any>(
     : [_subscriptionOrSubscriptions];
 
   const subscriptions = _subscriptions.map(
-    (x) => Object.assign({}, defaultSubscription, x) as Subscription<H, T>,
+    (x) =>
+      ({ isBlocking: true, fetchBefore: false, ...x }) as SubscriptionResolved<
+        H,
+        T
+      >,
   );
 
   const { path, method } = context;
@@ -526,11 +530,11 @@ const getSubscriptions = async <H extends HookContext, T = any>(
 
 const isSubscriptionInBatchMode = (
   sub: Subscription,
-): sub is SubscriptionBatchMode => !!sub.batchMode;
+): sub is SubscriptionBatchAction => "batchAction" in sub;
 
 const isSubscriptionNormalMode = (
   sub: Subscription,
-): sub is SubscriptionStandardMode => !sub.batchMode;
+): sub is SubscriptionSingleAction => "action" in sub;
 
 type TestConditionOptions = {
   item: any;
