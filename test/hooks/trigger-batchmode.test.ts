@@ -7,8 +7,7 @@ describe("trigger batch mode", () => {
     const { service } = mock("create", {
       method: "create",
       service: "tests",
-      batchMode: true,
-      action: (changes) => {
+      batchAction: (changes) => {
         cbCount++;
         changeCount = changes.length;
       },
@@ -32,17 +31,16 @@ describe("trigger batch mode", () => {
     let changeCount = 0;
     const { service } = mock(["create", "patch"], {
       service: "tests",
-      batchMode: true,
-      conditionsBefore: {
+      before: {
         test: true,
       },
-      conditionsData: {
+      data: {
         test: false,
       },
-      conditionsResult: {
+      result: {
         test: false,
       },
-      action: (changes) => {
+      batchAction: (changes) => {
         cbCount++;
         changeCount = changes.length;
       },
@@ -83,25 +81,24 @@ describe("trigger batch mode", () => {
     let changeCount = 0;
     const { service } = mock(["create", "patch"], {
       service: "tests",
-      batchMode: true,
-      conditionsBefore: {
+      before: {
         submittedAt: {
           $ne: null,
         },
         approvedAt: null,
       },
-      conditionsData: {
+      data: {
         approvedAt: {
           $ne: null,
         },
       },
-      conditionsResult: {
+      result: {
         approvedAt: {
           $ne: null,
         },
         declinedAt: null,
       },
-      action: (changes) => {
+      batchAction: (changes) => {
         cbCount++;
         changeCount = changes.length;
       },
