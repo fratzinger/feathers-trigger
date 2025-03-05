@@ -1,73 +1,73 @@
-import assert from "assert";
-import type { HookTriggerOptions } from "../../src";
-import { trigger } from "../../src";
-import { MemoryService } from "@feathersjs/memory";
-import { populate } from "feathers-graph-populate";
-import type { HookContext, Id } from "@feathersjs/feathers";
-import { feathers } from "@feathersjs/feathers";
-import { withResult } from "feathers-fletching";
+import assert from 'node:assert'
+import type { HookTriggerOptions } from '../../src/index.js'
+import { trigger } from '../../src/index.js'
+import { MemoryService } from '@feathersjs/memory'
+import { populate } from 'feathers-graph-populate'
+import type { HookContext, Id } from '@feathersjs/feathers'
+import { feathers } from '@feathersjs/feathers'
+import { withResult } from 'feathers-fletching'
 
-import { addDays } from "date-fns";
+import { addDays } from 'date-fns'
 
-import type { MethodName } from "../../src/types.internal";
+import type { MethodName } from '../../src/types.internal.js'
 
-declare module "@feathersjs/feathers" {
+declare module '@feathersjs/feathers' {
   interface Params {
-    user?: any;
+    user?: any
   }
 }
 
-describe("trigger scenarios", function () {
-  describe("notify on comments for published articles", function () {
+describe('trigger scenarios', function () {
+  describe('notify on comments for published articles', function () {
     const mock = (
       hookNames: MethodName | MethodName[],
       options: HookTriggerOptions,
       beforeHook?: (context: HookContext) => Promise<HookContext>,
       afterHook?: (context: HookContext) => Promise<HookContext>,
     ) => {
-      hookNames = Array.isArray(hookNames) ? hookNames : [hookNames];
-      const app = feathers();
+      hookNames = Array.isArray(hookNames) ? hookNames : [hookNames]
+      const app = feathers()
 
       app.use(
-        "/comments",
+        '/comments',
         new MemoryService({
           multi: true,
-          id: "id",
+          id: 'id',
           startId: 1,
         }),
-      );
-      const serviceComments = app.service("comments");
+      )
+      const serviceComments = app.service('comments')
       app.use(
-        "/articles",
+        '/articles',
         new MemoryService({
           multi: true,
-          id: "id",
+          id: 'id',
           startId: 1,
         }),
-      );
-      const serviceArticles = app.service("articles");
+      )
+      const serviceArticles = app.service('articles')
 
-      const hook = trigger(options);
+      const hook = trigger(options)
 
-      const beforeAll = [hook];
+      const beforeAll = [hook]
       if (beforeHook) {
-        beforeAll.push(beforeHook);
+        beforeAll.push(beforeHook)
       }
 
-      const afterAll = [hook];
+      const afterAll = [hook]
       if (afterHook) {
-        afterAll.push(afterHook);
+        afterAll.push(afterHook)
       }
 
       const hooks = {
         before: {},
         after: {},
-      };
+      }
 
       hookNames.forEach((hookName) => {
-        hooks.before[hookName] = beforeAll;
-        hooks.after[hookName] = afterAll;
-      });
+        hooks.before[hookName] = beforeAll
+        hooks.after[hookName] = afterAll
+      })
 
       serviceComments.hooks({
         after: {
@@ -75,11 +75,11 @@ describe("trigger scenarios", function () {
             populate({
               populates: {
                 article: {
-                  nameAs: "article",
-                  service: "articles",
+                  nameAs: 'article',
+                  service: 'articles',
                   asArray: false,
-                  keyHere: "articleId",
-                  keyThere: "id",
+                  keyHere: 'articleId',
+                  keyThere: 'id',
                 },
               },
               namedQueries: {
@@ -90,165 +90,165 @@ describe("trigger scenarios", function () {
             }),
           ],
         },
-      });
+      })
 
-      app.hooks(hooks);
+      app.hooks(hooks)
 
       return {
         app,
         serviceArticles,
         serviceComments,
-      };
-    };
+      }
+    }
 
-    it("notify on comments for published articles", async function () {
-      let callCounter = 0;
+    it('notify on comments for published articles', async function () {
+      let callCounter = 0
       const { serviceArticles, serviceComments } = mock(
-        ["create", "patch", "remove", "update"],
+        ['create', 'patch', 'remove', 'update'],
         {
-          result: { "article.publishedAt": { $ne: null } },
+          result: { 'article.publishedAt': { $ne: null } },
           manipulateParams: (params, context) => {
-            params.$populateParams = { name: "withArticle" };
-            return params;
+            params.$populateParams = { name: 'withArticle' }
+            return params
           },
-          service: "comments",
-          method: ["create", "patch"],
+          service: 'comments',
+          method: ['create', 'patch'],
           fetchBefore: true,
           action: ({ before, item }, { context }) => {
             if (callCounter === 0) {
               assert.deepStrictEqual(item, {
                 id: 2,
-                body: "hi2",
+                body: 'hi2',
                 articleId: 1,
                 article: {
                   id: 1,
-                  title: "supersecret",
-                  publishedAt: "2021",
+                  title: 'supersecret',
+                  publishedAt: '2021',
                 },
-              });
+              })
             } else if (callCounter === 1) {
               assert.deepStrictEqual(before, {
                 id: 1,
-                body: "hi11",
+                body: 'hi11',
                 articleId: 1,
                 article: {
                   id: 1,
-                  title: "supersecret",
-                  publishedAt: "2021",
+                  title: 'supersecret',
+                  publishedAt: '2021',
                 },
-              });
+              })
               assert.deepStrictEqual(item, {
                 id: 1,
-                body: "hi12",
+                body: 'hi12',
                 articleId: 1,
                 article: {
                   id: 1,
-                  title: "supersecret",
-                  publishedAt: "2021",
+                  title: 'supersecret',
+                  publishedAt: '2021',
                 },
-              });
+              })
             }
-            callCounter++;
+            callCounter++
           },
         },
-      );
+      )
 
       const article1 = await serviceArticles.create({
-        title: "supersecret",
+        title: 'supersecret',
         publishedAt: null,
-      });
+      })
       const comment1 = await serviceComments.create({
-        body: "hi",
+        body: 'hi',
         articleId: article1.id,
-      });
-      assert.strictEqual(callCounter, 0, "not called cb");
+      })
+      assert.strictEqual(callCounter, 0, 'not called cb')
 
       const comment11 = await serviceComments.patch(comment1.id as Id, {
-        body: "hi11",
-      });
-      assert.strictEqual(callCounter, 0, "not called cb");
+        body: 'hi11',
+      })
+      assert.strictEqual(callCounter, 0, 'not called cb')
       assert.deepStrictEqual(comment11, {
         id: comment11.id,
-        body: "hi11",
+        body: 'hi11',
         articleId: article1.id,
-      });
+      })
 
       const article11 = await serviceArticles.patch(article1.id, {
-        publishedAt: "2021",
-      });
+        publishedAt: '2021',
+      })
 
       const comment2 = await serviceComments.create({
-        body: "hi2",
+        body: 'hi2',
         articleId: article1.id,
-      });
-      assert.strictEqual(callCounter, 1, "called cb");
+      })
+      assert.strictEqual(callCounter, 1, 'called cb')
       assert.deepStrictEqual(comment2, {
         id: comment2.id,
-        body: "hi2",
+        body: 'hi2',
         articleId: article1.id,
-      });
+      })
 
       const comment12 = await serviceComments.patch(comment1.id, {
-        body: "hi12",
-      });
-      assert.strictEqual(callCounter, 2, "called cb");
+        body: 'hi12',
+      })
+      assert.strictEqual(callCounter, 2, 'called cb')
       assert.deepStrictEqual(comment12, {
         id: comment1.id,
-        body: "hi12",
+        body: 'hi12',
         articleId: article1.id,
-      });
+      })
 
       const article12 = await serviceArticles.patch(article1.id, {
         publishedAt: null,
-      });
+      })
       const comment21 = await serviceComments.patch(comment2.id, {
-        body: "hi21",
-      });
-      assert.strictEqual(callCounter, 2, "not called cb");
+        body: 'hi21',
+      })
+      assert.strictEqual(callCounter, 2, 'not called cb')
       assert.deepStrictEqual(comment21, {
         id: comment2.id,
-        body: "hi21",
+        body: 'hi21',
         articleId: article1.id,
-      });
-    });
-  });
+      })
+    })
+  })
 
-  describe("notify on projects assigned to user that get delayed", function () {
+  describe('notify on projects assigned to user that get delayed', function () {
     const mock = (
       hookNames: MethodName | MethodName[],
       options: HookTriggerOptions,
       beforeHook?: (context: HookContext) => Promise<HookContext>,
       afterHook?: (context: HookContext) => Promise<HookContext>,
     ) => {
-      hookNames = Array.isArray(hookNames) ? hookNames : [hookNames];
-      const app = feathers();
+      hookNames = Array.isArray(hookNames) ? hookNames : [hookNames]
+      const app = feathers()
 
       app.use(
-        "/projects",
+        '/projects',
         new MemoryService({
           multi: true,
-          id: "id",
+          id: 'id',
           startId: 1,
         }),
-      );
-      const serviceProjects = app.service("projects");
+      )
+      const serviceProjects = app.service('projects')
 
       serviceProjects.hooks({
         after: {
           all: [
             withResult({
               startsAt: (result) => {
-                return result.startsAt && new Date(result.startsAt);
+                return result.startsAt && new Date(result.startsAt)
               },
             }),
             populate({
               populates: {
                 user: {
-                  nameAs: "user",
-                  service: "users",
+                  nameAs: 'user',
+                  service: 'users',
                   asArray: false,
-                  keyHere: "userId",
-                  keyThere: "id",
+                  keyHere: 'userId',
+                  keyThere: 'id',
                 },
               },
               namedQueries: {
@@ -259,17 +259,17 @@ describe("trigger scenarios", function () {
             }),
           ],
         },
-      });
+      })
 
       app.use(
-        "/users",
+        '/users',
         new MemoryService({
           multi: true,
-          id: "id",
+          id: 'id',
           startId: 1,
         }),
-      );
-      const serviceUsers = app.service("users");
+      )
+      const serviceUsers = app.service('users')
 
       serviceUsers.hooks({
         after: {
@@ -277,11 +277,11 @@ describe("trigger scenarios", function () {
             populate({
               populates: {
                 projects: {
-                  nameAs: "projects",
-                  service: "projects",
+                  nameAs: 'projects',
+                  service: 'projects',
                   asArray: true,
-                  keyHere: "id",
-                  keyThere: "userId",
+                  keyHere: 'id',
+                  keyThere: 'userId',
                 },
               },
               namedQueries: {
@@ -292,69 +292,69 @@ describe("trigger scenarios", function () {
             }),
           ],
         },
-      });
+      })
 
-      const hook = trigger(options);
+      const hook = trigger(options)
 
-      const beforeAll = [hook];
+      const beforeAll = [hook]
       if (beforeHook) {
-        beforeAll.push(beforeHook);
+        beforeAll.push(beforeHook)
       }
 
-      const afterAll = [hook];
+      const afterAll = [hook]
       if (afterHook) {
-        afterAll.push(afterHook);
+        afterAll.push(afterHook)
       }
 
       const hooks = {
         before: {},
         after: {},
-      };
+      }
 
       hookNames.forEach((hookName) => {
-        hooks.before[hookName] = beforeAll;
-        hooks.after[hookName] = afterAll;
-      });
+        hooks.before[hookName] = beforeAll
+        hooks.after[hookName] = afterAll
+      })
 
-      app.hooks(hooks);
+      app.hooks(hooks)
 
       return {
         app,
         serviceProjects,
         serviceUsers,
-      };
-    };
+      }
+    }
 
-    it("notify on projects assigned to user that get delayed", async function () {
-      let callCounter = 0;
+    it('notify on projects assigned to user that get delayed', async function () {
+      let callCounter = 0
       const { serviceProjects, serviceUsers } = mock(
-        ["create", "patch", "update", "remove"],
+        ['create', 'patch', 'update', 'remove'],
         {
-          service: "projects",
-          method: ["patch", "update"],
+          service: 'projects',
+          method: ['patch', 'update'],
           fetchBefore: true,
           result: ({ item, before }, context) => {
             return {
               startsAt: { $gt: before.startsAt },
               userId: { $ne: context.params.user.id },
-            };
+            }
           },
           action: ({ before, item }, { context }) => {
             if (callCounter === 0) {
               assert.strictEqual(
                 item.userId,
                 user1.id,
-                "user is user1 on first call",
-              );
+                'user is user1 on first call',
+              )
             }
-            callCounter++;
+            callCounter++
           },
         },
-      );
+      )
 
-      const user1 = await serviceUsers.create({ id: 1, name: "user 1" });
-      const user2 = await serviceUsers.create({ id: 2, name: "user 2" });
-      const user3 = await serviceUsers.create({ id: 3, name: "user 3" });
+      const user1 = await serviceUsers.create({ id: 1, name: 'user 1' })
+      const user2 = await serviceUsers.create({ id: 2, name: 'user 2' })
+      const user3 = await serviceUsers.create({ id: 3, name: 'user 3' })
 
       const [project1, project2] = await serviceProjects.create([
         {
@@ -365,33 +365,33 @@ describe("trigger scenarios", function () {
           startsAt: addDays(new Date(), -10),
           userId: user2.id,
         },
-      ]);
+      ])
 
-      assert.strictEqual(callCounter, 0);
+      assert.strictEqual(callCounter, 0)
 
       await serviceProjects.patch(
         project1.id,
         { startsAt: addDays(new Date(), 2) },
         { user: user1 },
-      );
+      )
 
-      assert.strictEqual(callCounter, 0);
+      assert.strictEqual(callCounter, 0)
 
       await serviceProjects.patch(
         project1.id,
         { startsAt: addDays(new Date(), -10) },
         { user: user2 },
-      );
+      )
 
-      assert.strictEqual(callCounter, 0);
+      assert.strictEqual(callCounter, 0)
 
       await serviceProjects.patch(
         project1.id,
         { startsAt: addDays(new Date(), 2) },
         { user: user2 },
-      );
+      )
 
-      assert.strictEqual(callCounter, 1);
-    });
-  });
-});
+      assert.strictEqual(callCounter, 1)
+    })
+  })
+})

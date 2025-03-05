@@ -1,67 +1,65 @@
-import { defineConfig } from "vitepress";
-
 export default {
-  title: "feathers-trigger",
-  description: "Add triggers and actions to your feathers app.",
-  head: [["link", { rel: "icon", href: "/favicon.ico" }]],
+  title: 'feathers-trigger',
+  description: 'Add triggers and actions to your feathers app.',
+  head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
   themeConfig: {
-    logo: "/img/logo.svg",
+    logo: '/img/logo.svg',
     editLink: {
       pattern:
-        "https://github.com/fratzinger/feathers-trigger/edit/main/docs/:path",
-      text: "Edit this page on GitHub",
+        'https://github.com/fratzinger/feathers-trigger/edit/main/docs/:path',
+      text: 'Edit this page on GitHub',
     },
-    lastUpdatedText: "Last Updated",
+    lastUpdatedText: 'Last Updated',
     socialLinks: [
       {
-        icon: "twitter",
-        link: "https://twitter.com/feathersjs",
+        icon: 'twitter',
+        link: 'https://twitter.com/feathersjs',
       },
       {
-        icon: "discord",
-        link: "https://discord.gg/qa8kez8QBx",
+        icon: 'discord',
+        link: 'https://discord.gg/qa8kez8QBx',
       },
       {
-        icon: "github",
-        link: "https://github.com/fratzinger/feathers-trigger",
+        icon: 'github',
+        link: 'https://github.com/fratzinger/feathers-trigger',
       },
     ],
     sidebar: [
       {
-        text: "Getting Started",
-        link: "/getting-started",
+        text: 'Getting Started',
+        link: '/getting-started',
         // items: [
         //   { text: "Getting Started", link: "/getting-started" },
         //   { text: "Hooks", link: "/hooks" },
         // ]
       },
       {
-        text: "Hooks",
-        link: "/hooks",
+        text: 'Hooks',
+        link: '/hooks',
       },
     ],
     nav: [
       {
-        text: "Ecosystem",
+        text: 'Ecosystem',
         items: [
           {
-            text: "www.feathersjs.com",
-            link: "https://feathersjs.com/",
+            text: 'www.feathersjs.com',
+            link: 'https://feathersjs.com/',
           },
           {
-            text: "Feathers Github Repo",
-            link: "https://github.com/feathersjs/feathers",
+            text: 'Feathers Github Repo',
+            link: 'https://github.com/feathersjs/feathers',
           },
           {
-            text: "Awesome Feathersjs",
-            link: "https://github.com/feathersjs/awesome-feathersjs",
+            text: 'Awesome Feathersjs',
+            link: 'https://github.com/feathersjs/awesome-feathersjs',
           },
         ],
       },
     ],
     footer: {
-      message: "Released under the MIT License.",
-      copyright: "Copyright © 2021-present Frederik Schmatz",
+      message: 'Released under the MIT License.',
+      copyright: 'Copyright © 2021-present Frederik Schmatz',
     },
   },
-};
+}
