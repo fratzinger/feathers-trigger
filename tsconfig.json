@@ -1,18 +1,15 @@
 {
+  "extends": "@tsconfig/node22/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "outDir": "dist",
-    "moduleResolution": "Bundler",
-    "target": "ESNext",
-    "module": "ESNext",
-    "sourceMap": false,
-    "declaration": true,
+    "resolveJsonModule": true,
     "types": ["vitest/globals"],
-    "strict": true,
-    "noImplicitAny": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.test.js"]
+  "include": [
+    "src/**/*.ts", 
+    "test/**/*.ts",
+    "docs/.vitepress/**/*.ts",
+    "vite.config.ts",
+    "build.config.ts"
+  ],
+  "exclude": ["node_modules"]
 }
