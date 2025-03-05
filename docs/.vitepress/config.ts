@@ -1,4 +1,7 @@
-export default {
+import { defineConfig } from 'vitepress'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
   title: 'feathers-trigger',
   description: 'Add triggers and actions to your feathers app.',
   head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
@@ -62,4 +65,7 @@ export default {
       copyright: 'Copyright © 2021-present Frederik Schmatz',
     },
   },
-}
+  vite: {
+    plugins: [tailwindcss()],
+  },
+})
