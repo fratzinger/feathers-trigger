@@ -50,9 +50,9 @@ It's up to you how you define the `notify` action. For the example above the sol
 import { trigger } from "feathers-trigger";
 
 const notifyPublished = trigger({
-  conditionsData: { publishedAt: { $ne: null } },
-  conditionsBefore: { publishedAt: null },
-  conditionsResult: { publishedAt: { $ne: null } },
+  data: { publishedAt: { $ne: null } },
+  before: { publishedAt: null },
+  result: { publishedAt: { $ne: null } },
   action: ({ item }, context) => {
     return context.app.service("/notify").create(item);
   },
