@@ -8,8 +8,8 @@
 
 [![npm](https://img.shields.io/npm/v/feathers-trigger)](https://www.npmjs.com/package/feathers-trigger)
 [![GitHub Workflow Status](https://github.com/fratzinger/feathers-trigger/actions/workflows/node.js.yml/badge.svg)](https://github.com/fratzinger/feathers-trigger/actions)
-[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/fratzinger/feathers-trigger)](https://codeclimate.com/github/fratzinger/feathers-trigger)
-[![Code Climate coverage](https://img.shields.io/codeclimate/coverage/fratzinger/feathers-trigger)](https://codeclimate.com/github/fratzinger/feathers-trigger)
+[![Maintainability](https://qlty.sh/gh/fratzinger/projects/feathers-trigger/maintainability.svg)](https://qlty.sh/gh/fratzinger/projects/feathers-trigger)
+[![Code Coverage](https://qlty.sh/gh/fratzinger/projects/feathers-trigger/coverage.svg)](https://qlty.sh/gh/fratzinger/projects/feathers-trigger)
 [![libraries.io](https://img.shields.io/librariesio/release/npm/feathers-trigger)](https://libraries.io/npm/feathers-trigger)
 [![npm](https://img.shields.io/npm/dm/feathers-trigger)](https://www.npmjs.com/package/feathers-trigger)
 [![GitHub license](https://img.shields.io/github/license/fratzinger/feathers-trigger)](https://github.com/fratzinger/feathers-trigger/blob/master/LICENSE)
