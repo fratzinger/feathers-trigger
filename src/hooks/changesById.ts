@@ -4,7 +4,7 @@ import _get from 'lodash/get.js'
 import _set from 'lodash/set.js'
 import _isEqual from 'lodash/isEqual.js'
 
-import { shouldSkip } from 'feathers-utils'
+import { shouldSkip } from '@fratzinger/feathers-utils'
 
 import type {
   HookContext,
