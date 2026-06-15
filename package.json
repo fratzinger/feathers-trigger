@@ -9,7 +9,7 @@
     "url": "https://github.com/fratzinger/feathers-trigger"
   },
   "engines": {
-    "node": ">= 20"
+    "node": ">= 22"
   },
   "keywords": [
     "feathers",
@@ -52,9 +52,9 @@
     "docs:build": "vitepress build docs"
   },
   "dependencies": {
-    "fast-copy": "^3.0.2",
-    "feathers-hooks-common": "^8.2.1",
     "@fratzinger/feathers-utils": "^7.0.1",
+    "fast-copy": "^4.0.3",
+    "feathers-utils": "^10.0.4",
     "lodash": "^4.17.21",
     "sift": "^17.1.3"
   },

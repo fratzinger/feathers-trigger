@@ -1,4 +1,4 @@
-import { checkContext } from 'feathers-hooks-common'
+import { checkContext } from 'feathers-utils'
 import type { ManipulateParams, Change } from './changesById.js'
 import {
   changesByIdBefore,
@@ -137,12 +137,10 @@ export const trigger = <
   }
 
   return async (context: H, next?: NextFunction): Promise<H> => {
-    checkContext(
-      context,
-      null,
-      ['create', 'update', 'patch', 'remove'],
-      'trigger',
-    )
+    checkContext(context, {
+      method: ['create', 'update', 'patch', 'remove'],
+      label: 'trigger',
+    })
 
     if (context.type === 'before') {
       return await triggerBefore(context, options)

@@ -1,5 +1,3 @@
-import { getItems } from 'feathers-hooks-common'
-
 import _get from 'lodash/get.js'
 import _set from 'lodash/set.js'
 import _isEqual from 'lodash/isEqual.js'
@@ -13,6 +11,7 @@ import type {
   Params,
 } from '@feathersjs/feathers'
 import type { Promisable } from '../types.internal.js'
+import { getResultIsArray } from 'feathers-utils'
 
 export type Change<T = any> = {
   before: T
@@ -238,15 +237,13 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
         return
       }
 
-      const itemOrItems = getItems(context)
+      const { result: fetchedItems } = getResultIsArray(context)
+
       const idField = getIdField(context)
 
-      if (!itemOrItems) {
+      if (!fetchedItems.length) {
         return
       }
-      const fetchedItems = Array.isArray(itemOrItems)
-        ? itemOrItems
-        : [itemOrItems]
 
       const ids = fetchedItems.map((x) => x && x[idField])
 
