@@ -7,12 +7,10 @@
 > NOTE: This is the version for Feathers v5. For Feathers v4 use [feathers-trigger v0](https://github.com/fratzinger/feathers-trigger/tree/crow)
 
 [![npm](https://img.shields.io/npm/v/feathers-trigger)](https://www.npmjs.com/package/feathers-trigger)
-[![GitHub Workflow Status](https://github.com/fratzinger/feathers-trigger/actions/workflows/node.js.yml/badge.svg)](https://github.com/fratzinger/feathers-trigger/actions)
-[![Maintainability](https://qlty.sh/gh/fratzinger/projects/feathers-trigger/maintainability.svg)](https://qlty.sh/gh/fratzinger/projects/feathers-trigger)
-[![Code Coverage](https://qlty.sh/gh/fratzinger/projects/feathers-trigger/coverage.svg)](https://qlty.sh/gh/fratzinger/projects/feathers-trigger)
+[![GitHub Workflow Status](https://github.com/fratzinger/feathers-trigger/actions/workflows/node.js.yaml/badge.svg)](https://github.com/fratzinger/feathers-trigger/actions)
 [![libraries.io](https://img.shields.io/librariesio/release/npm/feathers-trigger)](https://libraries.io/npm/feathers-trigger)
 [![npm](https://img.shields.io/npm/dm/feathers-trigger)](https://www.npmjs.com/package/feathers-trigger)
-[![GitHub license](https://img.shields.io/github/license/fratzinger/feathers-trigger)](https://github.com/fratzinger/feathers-trigger/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/github/license/fratzinger/feathers-trigger)](https://github.com/fratzinger/feathers-trigger/blob/main/LICENSE)
 
 ## Documentation
 
@@ -23,6 +21,8 @@ For more information, please have a look at the docs: [https://feathers-trigger.
 ```bash
 npm i feathers-trigger
 ```
+
+`feathers-trigger` is an ESM-only package and requires **Node.js 24** or newer.
 
 ## Usage
 
@@ -53,7 +53,7 @@ const notifyPublished = trigger({
   data: { publishedAt: { $ne: null } },
   before: { publishedAt: null },
   result: { publishedAt: { $ne: null } },
-  action: ({ item }, context) => {
+  action: ({ item }, { context }) => {
     return context.app.service("/notify").create(item);
   },
 });
@@ -76,7 +76,7 @@ For more advanced examples, please have a look at the [docs](https://feathers-tr
 
 ## Testing
 
-Simply run `npm test` and all your tests in the `test/` directory will be run. It has full support for _Visual Studio Code_. You can use the debugger to set breakpoints.
+Simply run `pnpm test` and all your tests in the `test/` directory will be run. It has full support for _Visual Studio Code_. You can use the debugger to set breakpoints.
 
 ## Help
 

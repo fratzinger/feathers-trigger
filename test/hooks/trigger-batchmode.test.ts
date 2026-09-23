@@ -2,15 +2,11 @@ import { mock } from './base-mock.js'
 
 describe('trigger batch mode', () => {
   it('create: triggers on multi create without condition in batch mode', async function () {
-    let cbCount = 0
-    let changeCount = 0
+    const batchAction = vi.fn().mockName('batchAction')
     const { service } = mock('create', {
       method: 'create',
       service: 'tests',
-      batchAction: (changes) => {
-        cbCount++
-        changeCount = changes.length
-      },
+      batchAction,
     })
 
     await service.create([
@@ -18,17 +14,13 @@ describe('trigger batch mode', () => {
       { id: 1, test: true },
       { id: 2, test: true },
     ])
-    assert.strictEqual(cbCount, 1, 'action cb was called only a single time')
-    assert.strictEqual(
-      changeCount,
-      3,
-      'action cb was called with three change tuples',
-    )
+    expect(batchAction).toHaveBeenCalledTimes(1)
+    // the batchAction gets all three changes in one call
+    expect(batchAction.mock.lastCall?.[0]).toHaveLength(3)
   })
 
   it('patch: triggers on multi create with conditions in batch mode', async function () {
-    let cbCount = 0
-    let changeCount = 0
+    const batchAction = vi.fn().mockName('batchAction')
     const { service } = mock(['create', 'patch'], {
       service: 'tests',
       before: {
@@ -40,10 +32,7 @@ describe('trigger batch mode', () => {
       result: {
         test: false,
       },
-      batchAction: (changes) => {
-        cbCount++
-        changeCount = changes.length
-      },
+      batchAction,
     })
 
     await service.create([
@@ -51,34 +40,27 @@ describe('trigger batch mode', () => {
       { id: 1, test: true },
       { id: 2, test: true },
     ])
-    assert.strictEqual(cbCount, 0, 'action cb was not called')
+    expect(batchAction).not.toHaveBeenCalled()
 
     await service.patch(null, {
       test: false,
     })
 
-    assert.strictEqual(cbCount, 1, 'action cb was called only a single time')
-    assert.strictEqual(
-      changeCount,
-      3,
-      'action cb was called with three change tuples',
-    )
+    expect(batchAction).toHaveBeenCalledTimes(1)
+    // the batchAction gets all three changes in one call
+    expect(batchAction.mock.lastCall?.[0]).toHaveLength(3)
 
     await service.patch(null, {
       test: false,
     })
 
-    assert.strictEqual(cbCount, 1, 'action cb was called only a single time')
-    assert.strictEqual(
-      changeCount,
-      3,
-      'action cb was called with three change tuples',
-    )
+    // nothing changed anymore - still only the single call from above
+    expect(batchAction).toHaveBeenCalledTimes(1)
+    expect(batchAction.mock.lastCall?.[0]).toHaveLength(3)
   })
 
   it('patch: triggers on multi create with complex conditions in batch mode', async function () {
-    let cbCount = 0
-    let changeCount = 0
+    const batchAction = vi.fn().mockName('batchAction')
     const { service } = mock(['create', 'patch'], {
       service: 'tests',
       before: {
@@ -98,10 +80,7 @@ describe('trigger batch mode', () => {
         },
         declinedAt: null,
       },
-      batchAction: (changes) => {
-        cbCount++
-        changeCount = changes.length
-      },
+      batchAction,
     })
 
     await service.create([
@@ -127,7 +106,7 @@ describe('trigger batch mode', () => {
       },
     )
 
-    assert.strictEqual(cbCount, 0, 'action cb was not called')
+    expect(batchAction).not.toHaveBeenCalled()
 
     await service.patch(
       null,
@@ -143,11 +122,8 @@ describe('trigger batch mode', () => {
       },
     )
 
-    assert.strictEqual(cbCount, 1, 'action cb was called only a single time')
-    assert.strictEqual(
-      changeCount,
-      3,
-      'action cb was called with three change tuples',
-    )
+    expect(batchAction).toHaveBeenCalledTimes(1)
+    // the batchAction gets all three changes in one call
+    expect(batchAction.mock.lastCall?.[0]).toHaveLength(3)
   })
 })
