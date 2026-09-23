@@ -37,7 +37,7 @@
     "src/**",
     "dist/**"
   ],
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "pnpm@12.6.0",
   "scripts": {
     "build": "tsdown",
     "version": "npm run build",

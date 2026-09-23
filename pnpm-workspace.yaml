@@ -1,0 +1,3 @@
+allowBuilds:
+  # native resolver used by eslint-plugin-import-x
+  unrs-resolver: true
