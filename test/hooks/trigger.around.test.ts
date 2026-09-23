@@ -1,4 +1,3 @@
-import assert from 'node:assert'
 import type { Subscription, Action } from '../../src/index.js'
 import type { MethodName } from '../../src/types.internal.js'
 import { mock } from './base-mock-around.js'
@@ -8,21 +7,21 @@ import { addDays, isBefore } from 'date-fns'
 describe('hook - trigger', function () {
   describe('general', function () {
     it('throws without options', function () {
-      assert.throws(
+      expect(
         //@ts-expect-error should define options
         () => mock('create'),
         'passes',
-      )
+      ).toThrow()
     })
 
     it('does not throw for minimal example', function () {
-      assert.doesNotThrow(
+      expect(
         () =>
           mock('create', {
             action: () => {},
           }),
         'passes',
-      )
+      ).not.toThrow()
     })
 
     it('throws on find and get', async function () {
@@ -34,7 +33,10 @@ describe('hook - trigger', function () {
         action: () => {},
       })
 
-      await assert.rejects(service1.find({ query: {} }), 'find rejects')
+      await expect(
+        service1.find({ query: {} }),
+        'find rejects',
+      ).rejects.toThrow()
 
       // @ts-expect-error find is not allowed;
       const { service: service2 } = mock('get', {
@@ -44,7 +46,7 @@ describe('hook - trigger', function () {
         action: () => {},
       })
 
-      await assert.rejects(service2.get(0), 'get rejects')
+      await expect(service2.get(0), 'get rejects').rejects.toThrow()
     })
 
     it('triggers with no method', async function () {
@@ -58,16 +60,16 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.update(0, { id: 0, test: false })
-      assert.strictEqual(cbCount, 2, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(2)
 
       await service.patch(0, { test: true })
-      assert.strictEqual(cbCount, 3, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(3)
 
       await service.remove(0)
-      assert.strictEqual(cbCount, 4, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(4)
     })
 
     it('triggers with no service', async function () {
@@ -81,16 +83,16 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.update(0, { id: 0, test: false })
-      assert.strictEqual(cbCount, 2, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(2)
 
       await service.patch(0, { test: true })
-      assert.strictEqual(cbCount, 3, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(3)
 
       await service.remove(0)
-      assert.strictEqual(cbCount, 4, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(4)
     })
 
     it('triggers with no method and no service', async function () {
@@ -103,16 +105,16 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.update(0, { id: 0, test: false })
-      assert.strictEqual(cbCount, 2, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(2)
 
       await service.patch(0, { test: true })
-      assert.strictEqual(cbCount, 3, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(3)
 
       await service.remove(0)
-      assert.strictEqual(cbCount, 4, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(4)
     })
 
     it('triggers with method as array', async function () {
@@ -127,16 +129,16 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.update(0, { id: 0, test: false })
-      assert.strictEqual(cbCount, 2, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(2)
 
       await service.patch(0, { test: true })
-      assert.strictEqual(cbCount, 3, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(3)
 
       await service.remove(0)
-      assert.strictEqual(cbCount, 4, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(4)
     })
 
     it('triggers with service as array', async function () {
@@ -151,16 +153,16 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.update(0, { id: 0, test: false })
-      assert.strictEqual(cbCount, 2, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(2)
 
       await service.patch(0, { test: true })
-      assert.strictEqual(cbCount, 3, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(3)
 
       await service.remove(0)
-      assert.strictEqual(cbCount, 4, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(4)
     })
 
     it('can skip named sub', async function () {
@@ -176,19 +178,19 @@ describe('hook - trigger', function () {
 
       // @ts-expect-error params not typed
       await service.create({ id: 0, test: true }, { skipTrigger: ['skipMe'] })
-      assert.strictEqual(cbCount, 0, 'action not called')
+      expect(cbCount, 'action not called').toBe(0)
 
       // @ts-expect-error params not typed
       await service.update(0, { id: 0, test: false }, { skipTrigger: 'skipMe' })
-      assert.strictEqual(cbCount, 0, 'action not called')
+      expect(cbCount, 'action not called').toBe(0)
 
       // @ts-expect-error params not typed
       await service.patch(0, { test: true }, { skipTrigger: ['skipMe'] })
-      assert.strictEqual(cbCount, 0, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(0)
 
       // @ts-expect-error params not typed
       await service.remove(0, { skipTrigger: ['skipMe'] })
-      assert.strictEqual(cbCount, 0, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(0)
     })
   })
 
@@ -200,7 +202,7 @@ describe('hook - trigger', function () {
         service: 'tests',
         action: (item) => {
           cbCount++
-          assert.deepStrictEqual(item, {
+          expect(item).toStrictEqual({
             before: undefined,
             item: { id: 0, test: true },
           })
@@ -208,7 +210,7 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
 
     it('create: triggers on single create with subscriptions function without condition', async function () {
@@ -218,7 +220,7 @@ describe('hook - trigger', function () {
         service: 'tests',
         action: (item) => {
           cbCount++
-          assert.deepStrictEqual(item, {
+          expect(item).toStrictEqual({
             before: undefined,
             item: { id: 0, test: true },
           })
@@ -226,7 +228,7 @@ describe('hook - trigger', function () {
       }))
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
 
     it('create: triggers on multi create without condition', async function () {
@@ -244,7 +246,7 @@ describe('hook - trigger', function () {
         { id: 1, test: true },
         { id: 2, test: true },
       ])
-      assert.strictEqual(cbCount, 3, 'action cb was called three times')
+      expect(cbCount, 'action cb was called three times').toBe(3)
     })
 
     it('create: does not trigger with service mismatch', async function () {
@@ -258,7 +260,7 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
     })
 
     it('create: does not trigger with method mismatch', async function () {
@@ -272,7 +274,7 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
     })
 
     it('create: triggers on single create with condition', async function () {
@@ -283,7 +285,7 @@ describe('hook - trigger', function () {
         result: { id: 1 },
         action: (item) => {
           cbCount++
-          assert.deepStrictEqual(item, {
+          expect(item).toStrictEqual({
             before: undefined,
             item: { id: 1, test: true },
           })
@@ -291,10 +293,10 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.create({ id: 1, test: true })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
 
     it('create: triggers on single create with custom view', async function () {
@@ -307,7 +309,7 @@ describe('hook - trigger', function () {
         },
         action: (item) => {
           cbCount++
-          assert.deepStrictEqual(item, {
+          expect(item).toStrictEqual({
             before: undefined,
             item: { id: 1, test: true, count: 12 },
           })
@@ -315,10 +317,10 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true, count: 9 })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.create({ id: 1, test: true, count: 12 })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
 
     it('create: triggers on single create with custom view as condition', async function () {
@@ -331,7 +333,7 @@ describe('hook - trigger', function () {
         }),
         action: (item) => {
           cbCount++
-          assert.deepStrictEqual(item, {
+          expect(item).toStrictEqual({
             before: undefined,
             item: { id: 1, test: true, count: 12 },
           })
@@ -339,10 +341,10 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: true, count: 9 })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.create({ id: 1, test: true, count: 12 })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
 
     it('create: triggers on single create with custom param', async function () {
@@ -350,28 +352,22 @@ describe('hook - trigger', function () {
       const action: Action = (item, { subscription: sub }) => {
         cbCount++
         if (sub.id === 1) {
-          assert.deepStrictEqual(
-            item,
-            { before: undefined, item: { id: 1 } },
-            'correct item for sub1',
-          )
+          expect(item, 'correct item for sub1').toStrictEqual({
+            before: undefined,
+            item: { id: 1 },
+          })
         } else if (sub.id === 2) {
-          assert.deepStrictEqual(
-            item,
-            { before: undefined, item: { id: 1, test: true } },
-            'correct item for sub2',
-          )
+          expect(item, 'correct item for sub2').toStrictEqual({
+            before: undefined,
+            item: { id: 1, test: true },
+          })
         } else if (sub.id === 3) {
-          assert.deepStrictEqual(
-            item,
-            {
-              before: undefined,
-              item: { id: 1, test: true, comment: 'yippieh' },
-            },
-            'correct item for sub3',
-          )
+          expect(item, 'correct item for sub3').toStrictEqual({
+            before: undefined,
+            item: { id: 1, test: true, comment: 'yippieh' },
+          })
         } else {
-          assert.fail('should not get here')
+          expect.fail('should not get here')
         }
       }
 
@@ -410,12 +406,12 @@ describe('hook - trigger', function () {
         test: true,
         comment: 'yippieh',
       })
-      assert.strictEqual(cbCount, 3)
-      assert.deepStrictEqual(
-        result,
-        { id: 1, test: true, comment: 'yippieh' },
-        'has full object',
-      )
+      expect(cbCount).toBe(3)
+      expect(result, 'has full object').toStrictEqual({
+        id: 1,
+        test: true,
+        comment: 'yippieh',
+      })
     })
 
     it('create: $select in params has full item in trigger', async function () {
@@ -423,28 +419,22 @@ describe('hook - trigger', function () {
       const action: Action = (item, { subscription: sub }) => {
         cbCount++
         if (sub.id === 1) {
-          assert.deepStrictEqual(
-            item,
-            { before: undefined, item: { id: 1 } },
-            'correct item for sub1',
-          )
+          expect(item, 'correct item for sub1').toStrictEqual({
+            before: undefined,
+            item: { id: 1 },
+          })
         } else if (sub.id === 2) {
-          assert.deepStrictEqual(
-            item,
-            { before: undefined, item: { id: 1, test: true } },
-            'correct item for sub2',
-          )
+          expect(item, 'correct item for sub2').toStrictEqual({
+            before: undefined,
+            item: { id: 1, test: true },
+          })
         } else if (sub.id === 3) {
-          assert.deepStrictEqual(
-            item,
-            {
-              before: undefined,
-              item: { id: 1, test: true, comment: 'yippieh' },
-            },
-            'correct item for sub3',
-          )
+          expect(item, 'correct item for sub3').toStrictEqual({
+            before: undefined,
+            item: { id: 1, test: true, comment: 'yippieh' },
+          })
         } else {
-          assert.fail('should not get here')
+          expect.fail('should not get here')
         }
       }
 
@@ -482,12 +472,8 @@ describe('hook - trigger', function () {
         { id: 1, test: true, comment: 'yippieh' },
         { query: { $select: ['id', 'comment'] } },
       )
-      assert.strictEqual(cbCount, 3)
-      assert.deepStrictEqual(
-        result,
-        { id: 1, comment: 'yippieh' },
-        'has subset',
-      )
+      expect(cbCount).toBe(3)
+      expect(result, 'has subset').toStrictEqual({ id: 1, comment: 'yippieh' })
     })
 
     it('create: triggers on single create with data', async function () {
@@ -502,10 +488,10 @@ describe('hook - trigger', function () {
       })
 
       await service.create({ id: 0, test: false })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.create({ id: 1, test: true })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
   })
 
@@ -518,16 +504,16 @@ describe('hook - trigger', function () {
         fetchBefore: true,
         action: ({ before, item }) => {
           cbCount++
-          assert.deepStrictEqual(before, { id: 0, test: true })
-          assert.deepStrictEqual(item, { id: 0, test: false })
+          expect(before).toStrictEqual({ id: 0, test: true })
+          expect(item).toStrictEqual({ id: 0, test: false })
         },
       })
 
       const item = await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.update(item.id, { ...item, test: false })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
 
     it('update: does not trigger with service mismatch', async function () {
@@ -541,10 +527,10 @@ describe('hook - trigger', function () {
       })
 
       const item = await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.update(item.id, { ...item, test: false })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
     })
 
     it('update: does not trigger with method mismatch', async function () {
@@ -558,10 +544,10 @@ describe('hook - trigger', function () {
       })
 
       const item = await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.update(item.id, { ...item, test: false })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
     })
 
     it('update: triggers with custom view', async function () {
@@ -578,13 +564,13 @@ describe('hook - trigger', function () {
       const item = await service.create({ id: 0, test: true, count: 2 })
 
       await service.update(item.id, { id: 0, test: true, count: 12 })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.update(item.id, { id: 0, test: true, count: 9 })
-      assert.strictEqual(cbCount, 1, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(1)
 
       await service.update(item.id, { id: 0, test: true, count: 13 })
-      assert.strictEqual(cbCount, 2, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(2)
     })
 
     it('update: calls before with before', async function () {
@@ -600,13 +586,13 @@ describe('hook - trigger', function () {
       const item = await service.create({ id: 0, test: true, count: 2 })
 
       await service.update(item.id, { id: 0, test: true, count: 3 })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.update(item.id, { id: 0, test: true, count: 9 })
-      assert.strictEqual(cbCount, 1, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(1)
 
       await service.update(item.id, { id: 0, test: true, count: 3 })
-      assert.strictEqual(cbCount, 1, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(1)
     })
   })
 
@@ -619,16 +605,16 @@ describe('hook - trigger', function () {
         fetchBefore: true,
         action: ({ before, item }) => {
           cbCount++
-          assert.deepStrictEqual(before, { id: 0, test: true })
-          assert.deepStrictEqual(item, { id: 0, test: false })
+          expect(before).toStrictEqual({ id: 0, test: true })
+          expect(item).toStrictEqual({ id: 0, test: false })
         },
       })
 
       const item = await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.patch(item.id, { test: false })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
 
     it('patch: does not trigger with service mismatch', async function () {
@@ -642,10 +628,10 @@ describe('hook - trigger', function () {
       })
 
       const item = await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.patch(item.id, { test: false })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
     })
 
     it('patch: does not trigger with method mismatch', async function () {
@@ -659,10 +645,10 @@ describe('hook - trigger', function () {
       })
 
       const item = await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.patch(item.id, { test: false })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
     })
 
     it('patch: does not trigger with empty result', async function () {
@@ -678,10 +664,10 @@ describe('hook - trigger', function () {
       await service.create({ id: 0, test: true })
       await service.create({ id: 0, test: true })
       await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.patch(null, { test: true }, { query: { test: false } })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
     })
 
     it('patch: triggers if date is before new date', async function () {
@@ -705,13 +691,13 @@ describe('hook - trigger', function () {
       })
 
       await service.patch(item.id, { date: addDays(new Date(), -2) })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.patch(item.id, { date: addDays(new Date(), 5) })
-      assert.strictEqual(cbCount, 1, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(1)
 
       await service.patch(item.id, { date: addDays(new Date(), -1) })
-      assert.strictEqual(cbCount, 2, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(2)
     })
 
     it('patch: triggers if date is before new date as function', async function () {
@@ -735,13 +721,13 @@ describe('hook - trigger', function () {
       })
 
       await service.patch(item.id, { date: addDays(new Date(), -2) })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.patch(item.id, { date: addDays(new Date(), 5) })
-      assert.strictEqual(cbCount, 1, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(1)
 
       await service.patch(item.id, { date: addDays(new Date(), -1) })
-      assert.strictEqual(cbCount, 2, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(2)
     })
 
     it('patch: multiple triggers on multiple items', async function () {
@@ -781,15 +767,11 @@ describe('hook - trigger', function () {
       await service.create(items)
 
       await service.patch(null, { date: addDays(new Date(), -2) })
-      assert.deepStrictEqual(
-        calledTrigger1ById,
+      expect(calledTrigger1ById, 'called trigger1 for all items').toStrictEqual(
         { 0: true, 1: true, 2: true },
-        'called trigger1 for all items',
       )
-      assert.deepStrictEqual(
-        calledTrigger2ById,
+      expect(calledTrigger2ById, 'called trigger2 for two items').toStrictEqual(
         { 0: true, 2: true },
-        'called trigger2 for two items',
       )
     })
 
@@ -816,19 +798,19 @@ describe('hook - trigger', function () {
         { id: 1, test: true },
         { id: 2, test: true },
       ])
-      assert.strictEqual(cbCount, 0, 'action cb was not called')
+      expect(cbCount, 'action cb was not called').toBe(0)
 
       await service.patch(null, {
         test: false,
       })
 
-      assert.strictEqual(cbCount, 3, 'action cb was called three times')
+      expect(cbCount, 'action cb was called three times').toBe(3)
 
       await service.patch(null, {
         test: false,
       })
 
-      assert.strictEqual(cbCount, 3, 'action cb was still called three times')
+      expect(cbCount, 'action cb was still called three times').toBe(3)
     })
 
     it('patch: triggers with custom view', async function () {
@@ -845,13 +827,13 @@ describe('hook - trigger', function () {
       const item = await service.create({ id: 0, test: true, count: 2 })
 
       await service.patch(item.id, { count: 12 })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.patch(item.id, { count: 9 })
-      assert.strictEqual(cbCount, 1, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(1)
 
       await service.patch(item.id, { count: 13 })
-      assert.strictEqual(cbCount, 2, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(2)
     })
 
     it('patch: calls before with before', async function () {
@@ -867,13 +849,13 @@ describe('hook - trigger', function () {
       const item = await service.create({ id: 0, test: true, count: 2 })
 
       await service.patch(item.id, { count: 3 })
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
 
       await service.patch(item.id, { count: 9 })
-      assert.strictEqual(cbCount, 1, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(1)
 
       await service.patch(item.id, { count: 3 })
-      assert.strictEqual(cbCount, 1, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(1)
     })
   })
 
@@ -886,16 +868,16 @@ describe('hook - trigger', function () {
         fetchBefore: true,
         action: ({ before, item }) => {
           cbCount++
-          assert.deepStrictEqual(before, { id: 0, test: true })
-          assert.deepStrictEqual(item, { id: 0, test: true })
+          expect(before).toStrictEqual({ id: 0, test: true })
+          expect(item).toStrictEqual({ id: 0, test: true })
         },
       })
 
       const item = await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.remove(item.id)
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
 
     it('remove: does not trigger with service mismatch', async function () {
@@ -909,10 +891,10 @@ describe('hook - trigger', function () {
       })
 
       const item = await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.remove(item.id)
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
     })
 
     it('remove: does not trigger with method mismatch', async function () {
@@ -926,10 +908,10 @@ describe('hook - trigger', function () {
       })
 
       const item = await service.create({ id: 0, test: true })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.remove(item.id)
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
     })
 
     it('remove: triggers with custom view', async function () {
@@ -944,10 +926,10 @@ describe('hook - trigger', function () {
       })
 
       const item = await service.create({ id: 0, test: true, count: 12 })
-      assert.strictEqual(cbCount, 0, "action cb wasn't called")
+      expect(cbCount, "action cb wasn't called").toBe(0)
 
       await service.remove(item.id)
-      assert.strictEqual(cbCount, 1, 'action cb was called')
+      expect(cbCount, 'action cb was called').toBe(1)
     })
   })
 })

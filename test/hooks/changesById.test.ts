@@ -1,4 +1,3 @@
-import assert from 'node:assert'
 import type { HookChangesByIdOptions } from '../../src/index.js'
 import { changesById } from '../../src/index.js'
 import { MemoryService } from '@feathersjs/memory'
@@ -51,52 +50,52 @@ describe('hook - changesById', function () {
       let calledCb = false
       const cb = (byId, context) => {
         calledCb = true
-        assert.strictEqual(context.path, 'test', 'cb has context')
-        assert.strictEqual(byId['0'].before, undefined, 'before is undefined')
-        assert.deepStrictEqual(
-          byId['0'].item,
-          { id: 0, test: true, comment: 'awesome' },
-          'has right item',
-        )
+        expect(context.path, 'cb has context').toBe('test')
+        expect(byId['0'].before, 'before is undefined').toBe(undefined)
+        expect(byId['0'].item, 'has right item').toStrictEqual({
+          id: 0,
+          test: true,
+          comment: 'awesome',
+        })
       }
 
       const { service } = mock(cb, 'create')
-      assert.ok(!calledCb, 'not called cb')
+      expect(!calledCb, 'not called cb').toBeTruthy()
 
       const item = await service.create({ test: true, comment: 'awesome' })
 
-      assert.ok(calledCb, 'called cb')
-      assert.deepStrictEqual(
-        item,
-        { id: 0, test: true, comment: 'awesome' },
-        'has right result',
-      )
+      expect(calledCb, 'called cb').toBeTruthy()
+      expect(item, 'has right result').toStrictEqual({
+        id: 0,
+        test: true,
+        comment: 'awesome',
+      })
     })
 
     it('basic create with refetch', async function () {
       let calledCb = false
       const cb = (byId, context) => {
         calledCb = true
-        assert.strictEqual(context.path, 'test', 'cb has context')
-        assert.strictEqual(byId['0'].before, undefined, 'before is undefined')
-        assert.deepStrictEqual(
-          byId['0'].item,
-          { id: 0, test: true, comment: 'awesome' },
-          'has right item',
-        )
+        expect(context.path, 'cb has context').toBe('test')
+        expect(byId['0'].before, 'before is undefined').toBe(undefined)
+        expect(byId['0'].item, 'has right item').toStrictEqual({
+          id: 0,
+          test: true,
+          comment: 'awesome',
+        })
       }
 
       const { service } = mock(cb, 'create')
-      assert.ok(!calledCb, 'not called cb')
+      expect(!calledCb, 'not called cb').toBeTruthy()
 
       const item = await service.create({ test: true, comment: 'awesome' })
 
-      assert.ok(calledCb, 'called cb')
-      assert.deepStrictEqual(
-        item,
-        { id: 0, test: true, comment: 'awesome' },
-        'has right result',
-      )
+      expect(calledCb, 'called cb').toBeTruthy()
+      expect(item, 'has right result').toStrictEqual({
+        id: 0,
+        test: true,
+        comment: 'awesome',
+      })
     })
   })
 
@@ -105,52 +104,50 @@ describe('hook - changesById', function () {
       let calledCb = false
       const cb = (byId, context) => {
         calledCb = true
-        assert.strictEqual(context.path, 'test', 'cb has context')
-        assert.deepStrictEqual(
-          byId['0'].before,
-          { id: 0, test: true, comment: 'awesome' },
-          'has right before',
-        )
-        assert.deepStrictEqual(
-          byId['0'].item,
-          { id: 0, test: false },
-          'has right item',
-        )
+        expect(context.path, 'cb has context').toBe('test')
+        expect(byId['0'].before, 'has right before').toStrictEqual({
+          id: 0,
+          test: true,
+          comment: 'awesome',
+        })
+        expect(byId['0'].item, 'has right item').toStrictEqual({
+          id: 0,
+          test: false,
+        })
       }
 
       const { service } = mock(cb, 'update', { fetchBefore: true })
 
       const item = await service.create({ test: true, comment: 'awesome' })
 
-      assert.ok(!calledCb, 'not called cb')
+      expect(!calledCb, 'not called cb').toBeTruthy()
 
       const result = await service.update(item.id, { test: false })
 
-      assert.ok(calledCb, 'called cb')
-      assert.deepStrictEqual(result, { id: 0, test: false }, 'has right result')
+      expect(calledCb, 'called cb').toBeTruthy()
+      expect(result, 'has right result').toStrictEqual({ id: 0, test: false })
     })
 
     it('basic update with $select', async function () {
       let calledCb = false
       const cb = (byId, context) => {
         calledCb = true
-        assert.strictEqual(context.path, 'test', 'cb has context')
-        assert.deepStrictEqual(
-          byId['0'].before,
-          { id: 0, test: true, comment: 'awesome' },
-          'has right before',
-        )
-        assert.deepStrictEqual(
-          byId['0'].item,
-          { id: 0, test: false },
-          'has right item',
-        )
+        expect(context.path, 'cb has context').toBe('test')
+        expect(byId['0'].before, 'has right before').toStrictEqual({
+          id: 0,
+          test: true,
+          comment: 'awesome',
+        })
+        expect(byId['0'].item, 'has right item').toStrictEqual({
+          id: 0,
+          test: false,
+        })
       }
       const { service } = mock(cb, 'update', { fetchBefore: true })
 
       const item = await service.create({ test: true, comment: 'awesome' })
 
-      assert.ok(!calledCb, 'not called cb')
+      expect(!calledCb, 'not called cb').toBeTruthy()
 
       const result = await service.update(
         item.id,
@@ -158,8 +155,8 @@ describe('hook - changesById', function () {
         { query: { $select: ['id'] } },
       )
 
-      assert.ok(calledCb, 'called cb')
-      assert.deepStrictEqual(result, { id: 0 }, 'has right result')
+      expect(calledCb, 'called cb').toBeTruthy()
+      expect(result, 'has right result').toStrictEqual({ id: 0 })
     })
   })
 
@@ -168,55 +165,55 @@ describe('hook - changesById', function () {
       let calledCb = false
       const cb = (byId, context) => {
         calledCb = true
-        assert.strictEqual(context.path, 'test', 'cb has context')
-        assert.deepStrictEqual(
-          byId['0'].before,
-          { id: 0, test: true, comment: 'awesome' },
-          'has right before',
-        )
-        assert.deepStrictEqual(
-          byId['0'].item,
-          { id: 0, test: false, comment: 'awesome' },
-          'has right item',
-        )
+        expect(context.path, 'cb has context').toBe('test')
+        expect(byId['0'].before, 'has right before').toStrictEqual({
+          id: 0,
+          test: true,
+          comment: 'awesome',
+        })
+        expect(byId['0'].item, 'has right item').toStrictEqual({
+          id: 0,
+          test: false,
+          comment: 'awesome',
+        })
       }
       const { service } = mock(cb, 'patch', { fetchBefore: true })
 
       const item = await service.create({ test: true, comment: 'awesome' })
 
-      assert.ok(!calledCb, 'not called cb')
+      expect(!calledCb, 'not called cb').toBeTruthy()
 
       const result = await service.patch(item.id, { test: false })
 
-      assert.ok(calledCb, 'called cb')
-      assert.deepStrictEqual(
-        result,
-        { id: 0, test: false, comment: 'awesome' },
-        'has right result',
-      )
+      expect(calledCb, 'called cb').toBeTruthy()
+      expect(result, 'has right result').toStrictEqual({
+        id: 0,
+        test: false,
+        comment: 'awesome',
+      })
     })
 
     it('basic patch with $select', async function () {
       let calledCb = false
       const cb = (byId, context) => {
         calledCb = true
-        assert.strictEqual(context.path, 'test', 'cb has context')
-        assert.deepStrictEqual(
-          byId['0'].before,
-          { id: 0, test: true, comment: 'awesome' },
-          'has right before',
-        )
-        assert.deepStrictEqual(
-          byId['0'].item,
-          { id: 0, test: false, comment: 'awesome' },
-          'has right item',
-        )
+        expect(context.path, 'cb has context').toBe('test')
+        expect(byId['0'].before, 'has right before').toStrictEqual({
+          id: 0,
+          test: true,
+          comment: 'awesome',
+        })
+        expect(byId['0'].item, 'has right item').toStrictEqual({
+          id: 0,
+          test: false,
+          comment: 'awesome',
+        })
       }
       const { service } = mock(cb, 'patch', { fetchBefore: true })
 
       const item = await service.create({ test: true, comment: 'awesome' })
 
-      assert.ok(!calledCb, 'not called cb')
+      expect(!calledCb, 'not called cb').toBeTruthy()
 
       const result = await service.patch(
         item.id,
@@ -224,8 +221,8 @@ describe('hook - changesById', function () {
         { query: { $select: ['id'] } },
       )
 
-      assert.ok(calledCb, 'called cb')
-      assert.deepStrictEqual(result, { id: 0 }, 'has right result')
+      expect(calledCb, 'called cb').toBeTruthy()
+      expect(result, 'has right result').toStrictEqual({ id: 0 })
     })
   })
 
@@ -234,28 +231,28 @@ describe('hook - changesById', function () {
       let calledCb = false
       const cb = (byId, context) => {
         calledCb = true
-        assert.strictEqual(context.path, 'test', 'cb has context')
-        assert.deepStrictEqual(
-          byId['0'].before,
-          { id: 0, test: true, comment: 'awesome' },
-          'has right before',
-        )
-        assert.deepStrictEqual(
-          byId['0'].item,
-          { id: 0, test: true, comment: 'awesome' },
-          'has right item',
-        )
+        expect(context.path, 'cb has context').toBe('test')
+        expect(byId['0'].before, 'has right before').toStrictEqual({
+          id: 0,
+          test: true,
+          comment: 'awesome',
+        })
+        expect(byId['0'].item, 'has right item').toStrictEqual({
+          id: 0,
+          test: true,
+          comment: 'awesome',
+        })
       }
 
       const { service } = mock(cb, 'remove', { fetchBefore: true })
 
       const item = await service.create({ test: true, comment: 'awesome' })
 
-      assert.ok(!calledCb, 'not called cb')
+      expect(!calledCb, 'not called cb').toBeTruthy()
 
       await service.remove(item.id)
 
-      assert.ok(calledCb, 'called cb')
+      expect(calledCb, 'called cb').toBeTruthy()
     })
   })
 })

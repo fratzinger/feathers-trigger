@@ -1,4 +1,3 @@
-import assert from 'node:assert'
 import type { HookTriggerOptions } from '../../src/index.js'
 import { trigger } from '../../src/index.js'
 import { MemoryService } from '@feathersjs/memory'
@@ -116,7 +115,7 @@ describe('trigger scenarios', function () {
           fetchBefore: true,
           action: ({ before, item }, { context }) => {
             if (callCounter === 0) {
-              assert.deepStrictEqual(item, {
+              expect(item).toStrictEqual({
                 id: 2,
                 body: 'hi2',
                 articleId: 1,
@@ -127,7 +126,7 @@ describe('trigger scenarios', function () {
                 },
               })
             } else if (callCounter === 1) {
-              assert.deepStrictEqual(before, {
+              expect(before).toStrictEqual({
                 id: 1,
                 body: 'hi11',
                 articleId: 1,
@@ -137,7 +136,7 @@ describe('trigger scenarios', function () {
                   publishedAt: '2021',
                 },
               })
-              assert.deepStrictEqual(item, {
+              expect(item).toStrictEqual({
                 id: 1,
                 body: 'hi12',
                 articleId: 1,
@@ -161,13 +160,13 @@ describe('trigger scenarios', function () {
         body: 'hi',
         articleId: article1.id,
       })
-      assert.strictEqual(callCounter, 0, 'not called cb')
+      expect(callCounter, 'not called cb').toBe(0)
 
       const comment11 = await serviceComments.patch(comment1.id as Id, {
         body: 'hi11',
       })
-      assert.strictEqual(callCounter, 0, 'not called cb')
-      assert.deepStrictEqual(comment11, {
+      expect(callCounter, 'not called cb').toBe(0)
+      expect(comment11).toStrictEqual({
         id: comment11.id,
         body: 'hi11',
         articleId: article1.id,
@@ -181,8 +180,8 @@ describe('trigger scenarios', function () {
         body: 'hi2',
         articleId: article1.id,
       })
-      assert.strictEqual(callCounter, 1, 'called cb')
-      assert.deepStrictEqual(comment2, {
+      expect(callCounter, 'called cb').toBe(1)
+      expect(comment2).toStrictEqual({
         id: comment2.id,
         body: 'hi2',
         articleId: article1.id,
@@ -191,8 +190,8 @@ describe('trigger scenarios', function () {
       const comment12 = await serviceComments.patch(comment1.id, {
         body: 'hi12',
       })
-      assert.strictEqual(callCounter, 2, 'called cb')
-      assert.deepStrictEqual(comment12, {
+      expect(callCounter, 'called cb').toBe(2)
+      expect(comment12).toStrictEqual({
         id: comment1.id,
         body: 'hi12',
         articleId: article1.id,
@@ -204,8 +203,8 @@ describe('trigger scenarios', function () {
       const comment21 = await serviceComments.patch(comment2.id, {
         body: 'hi21',
       })
-      assert.strictEqual(callCounter, 2, 'not called cb')
-      assert.deepStrictEqual(comment21, {
+      expect(callCounter, 'not called cb').toBe(2)
+      expect(comment21).toStrictEqual({
         id: comment2.id,
         body: 'hi21',
         articleId: article1.id,
@@ -341,11 +340,7 @@ describe('trigger scenarios', function () {
           },
           action: ({ before, item }, { context }) => {
             if (callCounter === 0) {
-              assert.strictEqual(
-                item.userId,
-                user1.id,
-                'user is user1 on first call',
-              )
+              expect(item.userId, 'user is user1 on first call').toBe(user1.id)
             }
             callCounter++
           },
@@ -367,7 +362,7 @@ describe('trigger scenarios', function () {
         },
       ])
 
-      assert.strictEqual(callCounter, 0)
+      expect(callCounter).toBe(0)
 
       await serviceProjects.patch(
         project1.id,
@@ -375,7 +370,7 @@ describe('trigger scenarios', function () {
         { user: user1 },
       )
 
-      assert.strictEqual(callCounter, 0)
+      expect(callCounter).toBe(0)
 
       await serviceProjects.patch(
         project1.id,
@@ -383,7 +378,7 @@ describe('trigger scenarios', function () {
         { user: user2 },
       )
 
-      assert.strictEqual(callCounter, 0)
+      expect(callCounter).toBe(0)
 
       await serviceProjects.patch(
         project1.id,
@@ -391,7 +386,7 @@ describe('trigger scenarios', function () {
         { user: user2 },
       )
 
-      assert.strictEqual(callCounter, 1)
+      expect(callCounter).toBe(1)
     })
   })
 })

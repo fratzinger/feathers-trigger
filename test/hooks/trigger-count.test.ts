@@ -1,6 +1,6 @@
-import type { Application, HookContext } from '@feathersjs/feathers'
+import type { Application } from '@feathersjs/feathers'
 import { feathers } from '@feathersjs/feathers'
-import assert from 'node:assert'
+import type { Mock } from 'vitest'
 import { MemoryService } from '@feathersjs/memory'
 import type { HookTriggerOptions } from '../../src/index.js'
 import { trigger } from '../../src/index.js'
@@ -15,31 +15,18 @@ describe('trigger-count.test.ts', function () {
   describe('one trigger hook', function () {
     let app: Application
     let service: any
-    let findCounterByParams: Record<string, number>
-    let getCounterByParams: Record<string, number>
-    let triggerCounter: number
-
-    function findCount() {
-      let result = 0
-      Object.values(findCounterByParams).map((x) => (result += x))
-      return result
-    }
-
-    function getCount() {
-      let result = 0
-      Object.values(getCounterByParams).map((x) => (result += x))
-      return result
-    }
+    /** shared by every subscription - counts all action calls */
+    let action: Mock
+    let find: Mock
+    let get: Mock
 
     function reset() {
-      triggerCounter = 0
-      findCounterByParams = {}
-      getCounterByParams = {}
+      action = vi.fn().mockName('action')
+      find = vi.fn().mockName('service.find')
+      get = vi.fn().mockName('service.get')
     }
 
     function mock(options: HookTriggerOptions) {
-      reset()
-
       app = feathers()
       app.use(
         '/test',
@@ -56,28 +43,8 @@ describe('trigger-count.test.ts', function () {
       service.hooks({
         before: {
           all: [],
-          find: [
-            (context: HookContext) => {
-              const stringified = JSON.stringify(context.params)
-
-              if (!findCounterByParams[stringified]) {
-                findCounterByParams[stringified] = 0
-              }
-
-              findCounterByParams[stringified]++
-            },
-          ],
-          get: [
-            (context: HookContext) => {
-              const stringified = JSON.stringify(context.params)
-
-              if (!getCounterByParams[stringified]) {
-                getCounterByParams[stringified] = 0
-              }
-
-              getCounterByParams[stringified]++
-            },
-          ],
+          find: [find],
+          get: [get],
           create: [triggerHook],
           update: [triggerHook],
           patch: [triggerHook],
@@ -101,87 +68,83 @@ describe('trigger-count.test.ts', function () {
 
     it("methods without sub.params doesn't use find/get", async function () {
       mock({
-        action: () => {
-          triggerCounter++
-        },
+        action,
       })
       const item = await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 1)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(1)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.update(item.id, { id: item.id, test: false })
-      assert.strictEqual(triggerCounter, 2)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(2)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.patch(item.id, { test: true })
-      assert.strictEqual(triggerCounter, 3)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(3)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.patch(null, { test: true })
-      assert.strictEqual(triggerCounter, 4)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(4)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.remove(item.id)
-      assert.strictEqual(triggerCounter, 5)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(5)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 6)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(6)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.remove(null)
-      assert.strictEqual(triggerCounter, 7)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(7)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
     })
 
     it.skip("methods with unchanged sub.params doesn't use find/get", async function () {
       mock({
         manipulateParams: (params) => params,
-        action: () => {
-          triggerCounter++
-        },
+        action,
       })
       const item = await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 1)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(1)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.update(item.id, { id: item.id, test: false })
-      assert.strictEqual(triggerCounter, 2)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(2)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.patch(item.id, { test: true })
-      assert.strictEqual(triggerCounter, 3)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(3)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.patch(null, { test: true })
-      assert.strictEqual(triggerCounter, 4)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(4)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.remove(item.id)
-      assert.strictEqual(triggerCounter, 5)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(5)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 6)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(6)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.remove(null)
-      assert.strictEqual(triggerCounter, 7)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(7)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
     })
 
     it('methods with sub.params uses find/get', async function () {
@@ -190,87 +153,83 @@ describe('trigger-count.test.ts', function () {
           params.$populateParams = { name: 'all' }
           return params
         },
-        action: () => {
-          triggerCounter++
-        },
+        action,
       })
       const item = await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 1)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(1)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.update(item.id, { id: item.id, test: false })
-      assert.strictEqual(triggerCounter, 2)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 1)
+      expect(action).toHaveBeenCalledTimes(2)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(1)
 
       await service.patch(item.id, { test: true })
-      assert.strictEqual(triggerCounter, 3)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(3)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(2)
 
       await service.patch(null, { test: true })
-      assert.strictEqual(triggerCounter, 4)
-      assert.strictEqual(findCount(), 2)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(4)
+      expect(find).toHaveBeenCalledTimes(2)
+      expect(get).toHaveBeenCalledTimes(2)
 
       await service.remove(item.id)
-      assert.strictEqual(triggerCounter, 5)
-      assert.strictEqual(findCount(), 2)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(5)
+      expect(find).toHaveBeenCalledTimes(2)
+      expect(get).toHaveBeenCalledTimes(2)
 
       await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 6)
-      assert.strictEqual(findCount(), 3)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(6)
+      expect(find).toHaveBeenCalledTimes(3)
+      expect(get).toHaveBeenCalledTimes(2)
 
       await service.remove(null)
-      assert.strictEqual(triggerCounter, 7)
-      assert.strictEqual(findCount(), 3)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(7)
+      expect(find).toHaveBeenCalledTimes(3)
+      expect(get).toHaveBeenCalledTimes(2)
     })
 
     it('methods with fetchBefore:true uses find/get', async function () {
       mock({
         fetchBefore: true,
-        action: () => {
-          triggerCounter++
-        },
+        action,
       })
       const item = await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 1)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(1)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.update(item.id, { id: item.id, test: false })
-      assert.strictEqual(triggerCounter, 2)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 1)
+      expect(action).toHaveBeenCalledTimes(2)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(1)
 
       await service.patch(item.id, { test: true })
-      assert.strictEqual(triggerCounter, 3)
-      assert.strictEqual(findCount(), 0)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(3)
+      expect(find).toHaveBeenCalledTimes(0)
+      expect(get).toHaveBeenCalledTimes(2)
 
       await service.patch(null, { test: true })
-      assert.strictEqual(triggerCounter, 4)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(4)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(2)
 
       await service.remove(item.id)
-      assert.strictEqual(triggerCounter, 5)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 3)
+      expect(action).toHaveBeenCalledTimes(5)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(3)
 
       await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 6)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 3)
+      expect(action).toHaveBeenCalledTimes(6)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(3)
 
       await service.remove(null)
-      assert.strictEqual(triggerCounter, 7)
-      assert.strictEqual(findCount(), 2)
-      assert.strictEqual(getCount(), 3)
+      expect(action).toHaveBeenCalledTimes(7)
+      expect(find).toHaveBeenCalledTimes(2)
+      expect(get).toHaveBeenCalledTimes(3)
     })
 
     it('methods with fetchBefore:true and params uses find/get twice', async function () {
@@ -280,44 +239,42 @@ describe('trigger-count.test.ts', function () {
           params.$populateParams = { name: 'all' }
           return params
         },
-        action: () => {
-          triggerCounter++
-        },
+        action,
       })
       const item = await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 1)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(1)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.update(item.id, { id: item.id, test: false })
-      assert.strictEqual(triggerCounter, 2)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(2)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(2)
 
       await service.patch(item.id, { test: true })
-      assert.strictEqual(triggerCounter, 3)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 4)
+      expect(action).toHaveBeenCalledTimes(3)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(4)
 
       await service.patch(null, { test: true })
-      assert.strictEqual(triggerCounter, 4)
-      assert.strictEqual(findCount(), 3)
-      assert.strictEqual(getCount(), 4)
+      expect(action).toHaveBeenCalledTimes(4)
+      expect(find).toHaveBeenCalledTimes(3)
+      expect(get).toHaveBeenCalledTimes(4)
 
       await service.remove(item.id)
-      assert.strictEqual(triggerCounter, 5)
-      assert.strictEqual(findCount(), 3)
-      assert.strictEqual(getCount(), 5)
+      expect(action).toHaveBeenCalledTimes(5)
+      expect(find).toHaveBeenCalledTimes(3)
+      expect(get).toHaveBeenCalledTimes(5)
 
       await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 6)
-      assert.strictEqual(findCount(), 4)
-      assert.strictEqual(getCount(), 5)
+      expect(action).toHaveBeenCalledTimes(6)
+      expect(find).toHaveBeenCalledTimes(4)
+      expect(get).toHaveBeenCalledTimes(5)
 
       await service.remove(null)
-      assert.strictEqual(triggerCounter, 7)
-      assert.strictEqual(findCount(), 5)
-      assert.strictEqual(getCount(), 5)
+      expect(action).toHaveBeenCalledTimes(7)
+      expect(find).toHaveBeenCalledTimes(5)
+      expect(get).toHaveBeenCalledTimes(5)
     })
 
     it('subs with same params reuse find/get', async function () {
@@ -328,9 +285,7 @@ describe('trigger-count.test.ts', function () {
             params.$populateParams = { name: 'all' }
             return params
           },
-          action: () => {
-            triggerCounter++
-          },
+          action,
         },
         {
           fetchBefore: true,
@@ -338,9 +293,7 @@ describe('trigger-count.test.ts', function () {
             params.$populateParams = { name: 'all' }
             return params
           },
-          action: () => {
-            triggerCounter++
-          },
+          action,
         },
         {
           fetchBefore: true,
@@ -348,77 +301,62 @@ describe('trigger-count.test.ts', function () {
             params.$populateParams = { name: 'all' }
             return params
           },
-          action: () => {
-            triggerCounter++
-          },
+          action,
         },
       ])
 
       const item = await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 3)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(3)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.update(item.id, { id: item.id, test: false })
-      assert.strictEqual(triggerCounter, 6)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(6)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(2)
 
       await service.patch(item.id, { test: true })
-      assert.strictEqual(triggerCounter, 9)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 4)
+      expect(action).toHaveBeenCalledTimes(9)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(4)
 
       await service.patch(null, { test: true })
-      assert.strictEqual(triggerCounter, 12)
-      assert.strictEqual(findCount(), 3)
-      assert.strictEqual(getCount(), 4)
+      expect(action).toHaveBeenCalledTimes(12)
+      expect(find).toHaveBeenCalledTimes(3)
+      expect(get).toHaveBeenCalledTimes(4)
 
       await service.remove(item.id)
-      assert.strictEqual(triggerCounter, 15)
-      assert.strictEqual(findCount(), 3)
-      assert.strictEqual(getCount(), 5)
+      expect(action).toHaveBeenCalledTimes(15)
+      expect(find).toHaveBeenCalledTimes(3)
+      expect(get).toHaveBeenCalledTimes(5)
 
       await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 18)
-      assert.strictEqual(findCount(), 4)
-      assert.strictEqual(getCount(), 5)
+      expect(action).toHaveBeenCalledTimes(18)
+      expect(find).toHaveBeenCalledTimes(4)
+      expect(get).toHaveBeenCalledTimes(5)
 
       await service.remove(null)
-      assert.strictEqual(triggerCounter, 21)
-      assert.strictEqual(findCount(), 5)
-      assert.strictEqual(getCount(), 5)
+      expect(action).toHaveBeenCalledTimes(21)
+      expect(find).toHaveBeenCalledTimes(5)
+      expect(get).toHaveBeenCalledTimes(5)
     })
   })
 
   describe('two trigger hooks', function () {
     let app: Application
     let service: any
-    let findCounterByParams: Record<string, number>
-    let getCounterByParams: Record<string, number>
-    let triggerCounter: number
-
-    function findCount() {
-      let result = 0
-      Object.values(findCounterByParams).map((x) => (result += x))
-      return result
-    }
-
-    function getCount() {
-      let result = 0
-      Object.values(getCounterByParams).map((x) => (result += x))
-      return result
-    }
+    /** shared by every subscription - counts all action calls */
+    let action: Mock
+    let find: Mock
+    let get: Mock
 
     function reset() {
-      triggerCounter = 0
-      findCounterByParams = {}
-      getCounterByParams = {}
+      action = vi.fn().mockName('action')
+      find = vi.fn().mockName('service.find')
+      get = vi.fn().mockName('service.get')
     }
 
     function mock(options: HookTriggerOptions) {
-      reset()
-
       app = feathers()
       app.use(
         '/test',
@@ -437,28 +375,8 @@ describe('trigger-count.test.ts', function () {
       service.hooks({
         before: {
           all: [],
-          find: [
-            (context: HookContext) => {
-              const stringified = JSON.stringify(context.params)
-
-              if (!findCounterByParams[stringified]) {
-                findCounterByParams[stringified] = 0
-              }
-
-              findCounterByParams[stringified]++
-            },
-          ],
-          get: [
-            (context: HookContext) => {
-              const stringified = JSON.stringify(context.params)
-
-              if (!getCounterByParams[stringified]) {
-                getCounterByParams[stringified] = 0
-              }
-
-              getCounterByParams[stringified]++
-            },
-          ],
+          find: [find],
+          get: [get],
           create: [triggerHook1, triggerHook2],
           update: [triggerHook1, triggerHook2],
           patch: [triggerHook1, triggerHook2],
@@ -488,9 +406,7 @@ describe('trigger-count.test.ts', function () {
             params.$populateParams = { name: 'all' }
             return params
           },
-          action: () => {
-            triggerCounter++
-          },
+          action,
         },
         {
           fetchBefore: true,
@@ -498,9 +414,7 @@ describe('trigger-count.test.ts', function () {
             params.$populateParams = { name: 'all' }
             return params
           },
-          action: () => {
-            triggerCounter++
-          },
+          action,
         },
         {
           fetchBefore: true,
@@ -508,46 +422,44 @@ describe('trigger-count.test.ts', function () {
             params.$populateParams = { name: 'all' }
             return params
           },
-          action: () => {
-            triggerCounter++
-          },
+          action,
         },
       ])
 
       const item = await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 6)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 0)
+      expect(action).toHaveBeenCalledTimes(6)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(0)
 
       await service.update(item.id, { id: item.id, test: false })
-      assert.strictEqual(triggerCounter, 12)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 2)
+      expect(action).toHaveBeenCalledTimes(12)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(2)
 
       await service.patch(item.id, { test: true })
-      assert.strictEqual(triggerCounter, 18)
-      assert.strictEqual(findCount(), 1)
-      assert.strictEqual(getCount(), 4)
+      expect(action).toHaveBeenCalledTimes(18)
+      expect(find).toHaveBeenCalledTimes(1)
+      expect(get).toHaveBeenCalledTimes(4)
 
       await service.patch(null, { test: true })
-      assert.strictEqual(triggerCounter, 24)
-      assert.strictEqual(findCount(), 3)
-      assert.strictEqual(getCount(), 4)
+      expect(action).toHaveBeenCalledTimes(24)
+      expect(find).toHaveBeenCalledTimes(3)
+      expect(get).toHaveBeenCalledTimes(4)
 
       await service.remove(item.id)
-      assert.strictEqual(triggerCounter, 30)
-      assert.strictEqual(findCount(), 3)
-      assert.strictEqual(getCount(), 5)
+      expect(action).toHaveBeenCalledTimes(30)
+      expect(find).toHaveBeenCalledTimes(3)
+      expect(get).toHaveBeenCalledTimes(5)
 
       await service.create({ test: true })
-      assert.strictEqual(triggerCounter, 36)
-      assert.strictEqual(findCount(), 4)
-      assert.strictEqual(getCount(), 5)
+      expect(action).toHaveBeenCalledTimes(36)
+      expect(find).toHaveBeenCalledTimes(4)
+      expect(get).toHaveBeenCalledTimes(5)
 
       await service.remove(null)
-      assert.strictEqual(triggerCounter, 42)
-      assert.strictEqual(findCount(), 5)
-      assert.strictEqual(getCount(), 5)
+      expect(action).toHaveBeenCalledTimes(42)
+      expect(find).toHaveBeenCalledTimes(5)
+      expect(get).toHaveBeenCalledTimes(5)
     })
   })
 })
