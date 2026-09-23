@@ -1,5 +1,5 @@
 {
-  "extends": "@tsconfig/node22/tsconfig.json",
+  "extends": "@tsconfig/node24/tsconfig.json",
   "compilerOptions": {
     "resolveJsonModule": true,
     "types": ["vitest/globals"],
@@ -9,7 +9,7 @@
     "test/**/*.ts",
     "docs/.vitepress/**/*.ts",
     "vite.config.ts",
-    "build.config.ts"
+    "tsdown.config.ts"
   ],
   "exclude": ["node_modules"]
 }

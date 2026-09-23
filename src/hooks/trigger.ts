@@ -1,4 +1,4 @@
-import { checkContext } from 'feathers-hooks-common'
+import { checkContext } from 'feathers-utils'
 import type { ManipulateParams, Change } from './changesById.js'
 import {
   changesByIdBefore,
@@ -6,7 +6,7 @@ import {
   getOrFindByIdParams,
 } from './changesById.js'
 import sift from 'sift'
-import _set from 'lodash/set.js'
+import { set } from '../utils.internal.js'
 
 import type {
   HookContext,
@@ -286,7 +286,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
       fetchBefore: sub.fetchBefore || !!sub.before,
     })
 
-    _set(
+    set(
       context,
       ['params', 'changesById', sub.identifier, 'itemsBefore'],
       before,
@@ -338,7 +338,7 @@ const triggerAfter = async <H extends HookContext>(
         fetchBefore: sub.fetchBefore,
       })
 
-      _set(context, ['params', 'changesById', sub.identifier], changesById)
+      set(context, ['params', 'changesById', sub.identifier], changesById)
     }
 
     changesById = sub.identifier

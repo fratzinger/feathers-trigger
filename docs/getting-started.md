@@ -9,7 +9,7 @@ sidebarDepth: 2
   <img src="/img/logo.svg" width="150">
 </p>
 
-<div class="flex flex-wrap gap-1">
+<div style="display: flex; flex-wrap: wrap; gap: 0.25rem">
 <a href="https://www.npmjs.com/package/feathers-trigger"><img src="https://img.shields.io/npm/v/feathers-trigger" alt="npm version" /></a>
 <a href="https://github.com/fratzinger/feathers-trigger/actions"><img src="https://github.com/fratzinger/feathers-trigger/actions/workflows/node.js.yaml/badge.svg " alt="build status" /></a>
 <a href="https://codeclimate.com/github/fratzinger/feathers-trigger"><img src="https://img.shields.io/codeclimate/maintainability/fratzinger/feathers-trigger" alt="maintainability" /></a>

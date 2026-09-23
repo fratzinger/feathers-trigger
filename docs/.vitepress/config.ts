@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitepress'
-import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   title: 'feathers-trigger',
@@ -64,8 +63,5 @@ export default defineConfig({
       message: 'Released under the MIT License.',
       copyright: 'Copyright © 2021-present Frederik Schmatz',
     },
-  },
-  vite: {
-    plugins: [tailwindcss()],
   },
 })

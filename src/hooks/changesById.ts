@@ -1,10 +1,9 @@
-import { getItems } from 'feathers-hooks-common'
+import { dequal } from 'dequal'
 
-import _get from 'lodash/get.js'
-import _set from 'lodash/set.js'
-import _isEqual from 'lodash/isEqual.js'
+import { get, set } from '../utils.internal.js'
 
-import { shouldSkip } from '@fratzinger/feathers-utils'
+import { getResultIsArray } from 'feathers-utils'
+import { shouldSkip } from 'feathers-utils/predicates'
 
 import type {
   HookContext,
@@ -80,7 +79,7 @@ export const changesById = <H extends HookContext, T = any>(
   }
 
   return async (context: H, next?: NextFunction): Promise<H> => {
-    if (shouldSkip('checkMulti', context)) {
+    if (shouldSkip('checkMulti')(context)) {
       return context
     }
 
@@ -92,7 +91,7 @@ export const changesById = <H extends HookContext, T = any>(
         return context
       }
 
-      _set(context, pathBefore, changes)
+      set(context, pathBefore, changes)
     }
 
     if (next) {
@@ -100,13 +99,13 @@ export const changesById = <H extends HookContext, T = any>(
     }
 
     if (context.type === 'after' || context.type === 'around') {
-      const itemsBefore = _get(context, pathBefore)
+      const itemsBefore = get(context, pathBefore)
       const changes = await changesByIdAfter(context, itemsBefore, cb, options)
       if (!changes) {
         return context
       }
 
-      _set(context, getPath(options.name, false), changes)
+      set(context, getPath(options.name, false), changes)
     }
 
     return context
@@ -238,17 +237,15 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
         return
       }
 
-      const itemOrItems = getItems(context)
       const idField = getIdField(context)
 
-      if (!itemOrItems) {
+      if (!context.result) {
         return
       }
-      const fetchedItems = Array.isArray(itemOrItems)
-        ? itemOrItems
-        : [itemOrItems]
 
-      const ids = fetchedItems.map((x) => x && x[idField])
+      const { result: fetchedItems } = getResultIsArray(context)
+
+      const ids = fetchedItems.map((x: any) => x && x[idField])
 
       let params: Params | null = {
         query: {
@@ -269,11 +266,11 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
       return
     }
 
-    const query = Object.assign({}, context.params.query)
+    const query = { ...context.params.query }
 
     delete query.$select
 
-    let params: Params = Object.assign({}, context.params, { query })
+    let params: Params = { ...context.params, ...{ query } }
     delete params.changesById
 
     if (options?.deleteParams) {
@@ -354,7 +351,7 @@ const resultById = async <H extends HookContext>(
   )
 
   if (params) {
-    const contextParams = Object.assign({}, context.params)
+    const contextParams = { ...context.params }
     delete contextParams.changesById
     if (options?.deleteParams) {
       options.deleteParams.forEach((key) => {
@@ -362,7 +359,7 @@ const resultById = async <H extends HookContext>(
       })
     }
 
-    if (_isEqual(params, context.params)) {
+    if (dequal(params, context.params)) {
       params = null
     }
   }

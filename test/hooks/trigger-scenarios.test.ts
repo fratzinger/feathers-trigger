@@ -4,7 +4,7 @@ import { MemoryService } from '@feathersjs/memory'
 import { populate } from 'feathers-graph-populate'
 import type { HookContext, Id } from '@feathersjs/feathers'
 import { feathers } from '@feathersjs/feathers'
-import { withResult } from 'feathers-fletching'
+import { resolveResult } from 'feathers-utils'
 
 import { addDays } from 'date-fns'
 
@@ -235,9 +235,9 @@ describe('trigger scenarios', function () {
       serviceProjects.hooks({
         after: {
           all: [
-            withResult({
-              startsAt: (result) => {
-                return result.startsAt && new Date(result.startsAt)
+            resolveResult({
+              startsAt: ({ value }) => {
+                return value && new Date(value)
               },
             }),
             populate({
