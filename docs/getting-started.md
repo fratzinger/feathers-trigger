@@ -12,8 +12,6 @@ sidebarDepth: 2
 <div style="display: flex; flex-wrap: wrap; gap: 0.25rem">
 <a href="https://www.npmjs.com/package/feathers-trigger"><img src="https://img.shields.io/npm/v/feathers-trigger" alt="npm version" /></a>
 <a href="https://github.com/fratzinger/feathers-trigger/actions"><img src="https://github.com/fratzinger/feathers-trigger/actions/workflows/node.js.yaml/badge.svg " alt="build status" /></a>
-<a href="https://codeclimate.com/github/fratzinger/feathers-trigger"><img src="https://img.shields.io/codeclimate/maintainability/fratzinger/feathers-trigger" alt="maintainability" /></a>
-<a href="https://codeclimate.com/github/fratzinger/feathers-trigger"><img src="https://img.shields.io/codeclimate/coverage/fratzinger/feathers-trigger" alt="coverage" /></a>
 <a href="https://libraries.io/npm/feathers-trigger"><img src="https://img.shields.io/librariesio/release/npm/feathers-trigger" alt="libraries.io" /></a>
 <a href="https://www.npmjs.com/package/feathers-trigger"><img src="https://img.shields.io/npm/dm/feathers-trigger" alt="downloads" /></a>
 <a href="https://github.com/fratzinger/feathers-trigger/blob/main/LICENSE"><img src="https://img.shields.io/github/license/fratzinger/feathers-trigger" alt="license" /></a>

@@ -39,10 +39,6 @@ jobs:
           cache: "pnpm"
       - run: pnpm i
       - run: pnpm run coverage
-      - uses: qltysh/qlty-action/coverage@v2
-        with:
-          token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
-          files: coverage/lcov.info
 
   build:
     name: build
