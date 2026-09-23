@@ -118,6 +118,8 @@ export type SubscriptionResolved<
   paramsResolved?: Record<string, any>
 }
 
+let hookIdCounter = 0
+
 export const trigger = <
   H extends HookContext,
   T = H extends HookContext<any, infer S>
@@ -136,6 +138,10 @@ export const trigger = <
     throw new Error('You should define subscriptions')
   }
 
+  // every `trigger()` hook gets its own slot in `context.params.trigger`, so
+  // that multiple trigger hooks can be registered next to each other
+  const hookId = `${hookIdCounter++}`
+
   return async (context: H, next?: NextFunction): Promise<H> => {
     checkContext(
       context,
@@ -145,13 +151,13 @@ export const trigger = <
     )
 
     if (context.type === 'before') {
-      return await triggerBefore(context, options)
+      return await triggerBefore(context, options, hookId)
     } else if (context.type === 'after') {
-      return await triggerAfter(context)
+      return await triggerAfter(context, hookId)
     } else if (context.type === 'around' && next) {
-      context = await triggerBefore(context, options)
+      context = await triggerBefore(context, options, hookId)
       await next()
-      context = await triggerAfter(context)
+      context = await triggerAfter(context, hookId)
       return context
     } else {
       return context
@@ -177,6 +183,7 @@ const makeDebug = (sub: Subscription, context: HookContext) => {
 const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
   context: H,
   options: HookTriggerOptions<H, T>,
+  hookId: string,
 ): Promise<H> => {
   let subs = await getSubscriptions(context, options)
 
@@ -286,13 +293,16 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
     )
   }
 
-  setConfig(context, subs)
+  setConfig(context, hookId, subs)
 
   return context
 }
 
-const triggerAfter = async <H extends HookContext>(context: H): Promise<H> => {
-  const subs = getConfig(context)
+const triggerAfter = async <H extends HookContext>(
+  context: H,
+  hookId: string,
+): Promise<H> => {
+  const subs = getConfig(context, hookId)
   if (!subs?.length) {
     return context
   }
@@ -423,16 +433,19 @@ const CONFIG_KEY = 'subscriptions' as const
 
 function setConfig(
   context: HookContext,
+  hookId: string,
   val: SubscriptionResolved<any, any>[],
 ): void {
   context.params.trigger = context.params.trigger || {}
-  context.params.trigger[CONFIG_KEY] = val
+  context.params.trigger[CONFIG_KEY] = context.params.trigger[CONFIG_KEY] || {}
+  context.params.trigger[CONFIG_KEY][hookId] = val
 }
 
 function getConfig(
   context: HookContext,
+  hookId: string,
 ): SubscriptionResolved<any, any>[] | undefined {
-  return context.params.trigger?.[CONFIG_KEY]
+  return context.params.trigger?.[CONFIG_KEY]?.[hookId]
 }
 
 const getSubscriptions = async <H extends HookContext, T = any>(
