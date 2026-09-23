@@ -41,7 +41,7 @@
   "scripts": {
     "build": "tsdown",
     "version": "npm run build",
-    "release": "np",
+    "release": "npx np",
     "test": "vitest run",
     "vitest": "vitest",
     "coverage": "vitest run --coverage",
@@ -63,7 +63,6 @@
     "@vitest/coverage-v8": "^5.0.1",
     "eslint": "^10.11.0",
     "feathers-graph-populate": "^6.0.1",
-    "np": "^12.1.1",
     "tsdown": "^0.23.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.0",
