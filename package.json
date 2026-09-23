@@ -61,7 +61,6 @@
     "@tsconfig/node24": "^24.0.5",
     "@types/node": "^26.6.2",
     "@vitest/coverage-v8": "^5.0.1",
-    "date-fns": "^4.4.0",
     "eslint": "^10.11.0",
     "feathers-graph-populate": "^6.0.1",
     "np": "^12.1.1",

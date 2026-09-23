@@ -2,7 +2,7 @@ import type { Subscription, Action } from '../../src/index.js'
 import type { MethodName } from '../../src/types.internal.js'
 import { mock } from './base-mock-around.js'
 
-import { addDays, isBefore } from 'date-fns'
+import { addDays } from './utils.js'
 
 describe('hook - trigger', function () {
   describe('general', function () {
@@ -706,7 +706,7 @@ describe('hook - trigger', function () {
         method: 'patch',
         service: 'tests',
         result: ({ before, item }) => {
-          return isBefore(new Date(item.date), new Date(before.date))
+          return new Date(item.date) < new Date(before.date)
         },
         fetchBefore: true,
         action: () => {

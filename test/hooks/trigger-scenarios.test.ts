@@ -6,7 +6,7 @@ import type { HookContext, Id } from '@feathersjs/feathers'
 import { feathers } from '@feathersjs/feathers'
 import { resolveResult } from 'feathers-utils'
 
-import { addDays } from 'date-fns'
+import { addDays } from './utils.js'
 
 import type { MethodName } from '../../src/types.internal.js'
 
