@@ -305,6 +305,94 @@ describe('hook - trigger', function () {
       expect(cbCount, 'action called for every item').toBe(2)
     })
 
+    it('create: tests data', async function () {
+      const created: unknown[] = []
+      const { service } = mock('create', {
+        data: { test: true },
+        action: ({ item }) => {
+          created.push(item)
+        },
+      })
+
+      await service.create({ id: 0, test: false })
+      expect(created, 'action not called').toStrictEqual([])
+
+      await service.create({ id: 1, test: true })
+      expect(created, 'action called for matching item').toStrictEqual([
+        { id: 1, test: true },
+      ])
+    })
+
+    it('create: tests data per item on multi create', async function () {
+      const created: unknown[] = []
+      const { service } = mock('create', {
+        data: { test: true },
+        action: ({ item }) => {
+          created.push(item)
+        },
+      })
+
+      await service.create([
+        { id: 0, test: false },
+        { id: 1, test: false },
+      ])
+      expect(created, 'action not called').toStrictEqual([])
+
+      await service.create([
+        { id: 2, test: false },
+        { id: 3, test: true },
+        { id: 4, test: false },
+      ])
+      expect(created, 'action only called for matching item').toStrictEqual([
+        { id: 3, test: true },
+      ])
+    })
+
+    it('create: tests data per item on multi create without ids in data', async function () {
+      const created: unknown[] = []
+      const { service } = mock('create', {
+        data: (item) => item.test === true,
+        action: ({ item }) => {
+          created.push(item)
+        },
+      })
+
+      await service.create([{ test: false }, { test: true }, { test: false }])
+      expect(created, 'action only called for matching item').toStrictEqual([
+        { id: 1, test: true },
+      ])
+    })
+
+    it('create: maps data per item by id on multi create, regardless of the order', async function () {
+      const created: unknown[] = []
+      const { service } = mock('create', {
+        data: { test: true },
+        action: ({ item }) => {
+          created.push(item)
+        },
+      })
+
+      // runs after the trigger checked `data`, so the result has a different
+      // order than `data` had while checking
+      service.hooks({
+        before: {
+          create: [
+            (context) => {
+              context.data = (context.data as any[]).toReversed()
+            },
+          ],
+        },
+      })
+
+      await service.create([
+        { id: 0, test: true },
+        { id: 1, test: false },
+      ])
+      expect(created, 'action only called for matching item').toStrictEqual([
+        { id: 0, test: true },
+      ])
+    })
+
     it('create: does not trigger with service mismatch', async function () {
       let cbCount = 0
       const { service } = mock('create', {
@@ -526,24 +614,6 @@ describe('hook - trigger', function () {
       )
       expect(cbCount).toBe(3)
       expect(result, 'has subset').toStrictEqual({ id: 1, comment: 'yippieh' })
-    })
-
-    it('create: triggers on single create with data', async function () {
-      let cbCount = 0
-      const { service } = mock('create', {
-        method: 'create',
-        service: 'tests',
-        data: { test: true },
-        action: () => {
-          cbCount++
-        },
-      })
-
-      await service.create({ id: 0, test: false })
-      expect(cbCount, "action cb wasn't called").toBe(0)
-
-      await service.create({ id: 1, test: true })
-      expect(cbCount, 'action cb was called').toBe(1)
     })
   })
 

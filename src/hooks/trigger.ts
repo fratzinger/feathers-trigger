@@ -116,6 +116,11 @@ export type SubscriptionResolved<
 > = Subscription<H, T> & {
   identifier?: string
   paramsResolved?: Record<string, any>
+  /**
+   * multi create only: every item of `context.data` and whether it matched
+   * `data`. Only set if some items matched and some didn't
+   */
+  dataMatches?: { item: any; isMatch: boolean }[]
 }
 
 let hookIdCounter = 0
@@ -215,19 +220,31 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
         return false
       }
 
-      // test data - only for a single item, on multi create there is no
-      // reliable way to map the items of `context.data` to the result
-      if (
-        sub.data !== undefined &&
-        !Array.isArray(context.data) &&
-        !(await testCondition({
-          condition: sub.data,
-          item: context.data,
-          context,
-        }))
-      ) {
-        log('skipping because of data mismatch')
-        return false
+      // test data - on multi create for every item, just like on single create
+      if (sub.data !== undefined) {
+        const items = Array.isArray(context.data)
+          ? context.data
+          : [context.data]
+
+        const dataMatches = await Promise.all(
+          items.map(async (item) => ({
+            item,
+            isMatch: await testCondition({
+              condition: sub.data,
+              item,
+              context,
+            }),
+          })),
+        )
+
+        if (!dataMatches.some(({ isMatch }) => isMatch)) {
+          log('skipping because of data mismatch')
+          return false
+        }
+
+        if (!dataMatches.every(({ isMatch }) => isMatch)) {
+          sub.dataMatches = dataMatches
+        }
       }
 
       // test params
@@ -357,12 +374,18 @@ const triggerAfter = async <H extends HookContext>(
     }
 
     const changes = Object.values(changesById)
+    const dataMismatchIds = getDataMismatchIds(context, sub)
 
     const batchActionArguments: [change: Change, options: ActionOptions][] = []
 
     for (const change of changes) {
       const { before } = change
       const { item } = change
+
+      if (dataMismatchIds?.has(String(item?.[context.service.id]))) {
+        log('skipping because of data mismatch')
+        continue
+      }
 
       const changeForSub = change
       if (
@@ -497,6 +520,49 @@ const getSubscriptions = async <H extends HookContext, T = any>(
 
     return true
   })
+}
+
+/**
+ * On multi create, `data` is tested for every item in the before hook. This
+ * maps the items that didn't match to the ids of the created items: by their
+ * id in `data` if there is one, otherwise by their position in the result.
+ */
+const getDataMismatchIds = (
+  context: HookContext,
+  sub: SubscriptionResolved,
+): Set<string> | undefined => {
+  const { dataMatches } = sub
+  if (!dataMatches) {
+    return
+  }
+
+  const idField = context.service.id
+  const ids = new Set<string>()
+
+  dataMatches.forEach(({ item, isMatch }, index) => {
+    if (isMatch) {
+      return
+    }
+
+    let id = item?.[idField]
+
+    if (id == null) {
+      if (
+        !Array.isArray(context.result) ||
+        context.result.length !== dataMatches.length
+      ) {
+        throw new Error(
+          "Can't map 'context.data' to 'context.result' to test 'data' on multi create",
+        )
+      }
+
+      id = context.result[index]?.[idField]
+    }
+
+    ids.add(String(id))
+  })
+
+  return ids
 }
 
 const isSubscriptionInBatchMode = (
