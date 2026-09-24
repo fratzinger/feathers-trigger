@@ -58,7 +58,10 @@ describe('trigger scenarios', function () {
         afterAll.push(afterHook)
       }
 
-      const hooks = {
+      const hooks: Record<
+        'before' | 'after',
+        Partial<Record<MethodName, any[]>>
+      > = {
         before: {},
         after: {},
       }
@@ -305,7 +308,10 @@ describe('trigger scenarios', function () {
         afterAll.push(afterHook)
       }
 
-      const hooks = {
+      const hooks: Record<
+        'before' | 'after',
+        Partial<Record<MethodName, any[]>>
+      > = {
         before: {},
         after: {},
       }

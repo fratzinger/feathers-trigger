@@ -11,7 +11,9 @@ export default defineConfig({
         'https://github.com/fratzinger/feathers-trigger/edit/main/docs/:path',
       text: 'Edit this page on GitHub',
     },
-    lastUpdatedText: 'Last Updated',
+    lastUpdated: {
+      text: 'Last Updated',
+    },
     socialLinks: [
       {
         icon: 'twitter',

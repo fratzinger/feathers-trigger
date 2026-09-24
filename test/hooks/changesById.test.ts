@@ -1,14 +1,18 @@
-import type { HookChangesByIdOptions } from '../../src/index.js'
+import type { Change, HookChangesByIdOptions } from '../../src/index.js'
 import { changesById } from '../../src/index.js'
 import { MemoryService } from '@feathersjs/memory'
+import type { HookContext, Id } from '@feathersjs/feathers'
 import { feathers } from '@feathersjs/feathers'
+import type { MethodName } from '../../src/types.internal.js'
+
+type Callback = (byId: Record<Id, Change>, context: HookContext) => void
 
 function mock(
-  cb,
-  hookName,
+  cb: Callback,
+  hookName: MethodName,
   options?: Partial<HookChangesByIdOptions>,
-  beforeHook?,
-  afterHook?,
+  beforeHook?: (context: HookContext) => Promise<HookContext>,
+  afterHook?: (context: HookContext) => Promise<HookContext>,
 ) {
   const app = feathers()
   app.use('/test', new MemoryService())
@@ -48,7 +52,7 @@ describe('hook - changesById', function () {
   describe('create', function () {
     it('basic create', async function () {
       let calledCb = false
-      const cb = (byId, context) => {
+      const cb: Callback = (byId, context) => {
         calledCb = true
         expect(context.path, 'cb has context').toBe('test')
         expect(byId['0'].before, 'before is undefined').toBe(undefined)
@@ -74,7 +78,7 @@ describe('hook - changesById', function () {
 
     it('basic create with refetch', async function () {
       let calledCb = false
-      const cb = (byId, context) => {
+      const cb: Callback = (byId, context) => {
         calledCb = true
         expect(context.path, 'cb has context').toBe('test')
         expect(byId['0'].before, 'before is undefined').toBe(undefined)
@@ -102,7 +106,7 @@ describe('hook - changesById', function () {
   describe('update', function () {
     it('basic update', async function () {
       let calledCb = false
-      const cb = (byId, context) => {
+      const cb: Callback = (byId, context) => {
         calledCb = true
         expect(context.path, 'cb has context').toBe('test')
         expect(byId['0'].before, 'has right before').toStrictEqual({
@@ -130,7 +134,7 @@ describe('hook - changesById', function () {
 
     it('basic update with $select', async function () {
       let calledCb = false
-      const cb = (byId, context) => {
+      const cb: Callback = (byId, context) => {
         calledCb = true
         expect(context.path, 'cb has context').toBe('test')
         expect(byId['0'].before, 'has right before').toStrictEqual({
@@ -163,7 +167,7 @@ describe('hook - changesById', function () {
   describe('patch', function () {
     it('basic patch', async function () {
       let calledCb = false
-      const cb = (byId, context) => {
+      const cb: Callback = (byId, context) => {
         calledCb = true
         expect(context.path, 'cb has context').toBe('test')
         expect(byId['0'].before, 'has right before').toStrictEqual({
@@ -195,7 +199,7 @@ describe('hook - changesById', function () {
 
     it('basic patch with $select', async function () {
       let calledCb = false
-      const cb = (byId, context) => {
+      const cb: Callback = (byId, context) => {
         calledCb = true
         expect(context.path, 'cb has context').toBe('test')
         expect(byId['0'].before, 'has right before').toStrictEqual({
@@ -229,7 +233,7 @@ describe('hook - changesById', function () {
   describe('remove', function () {
     it('basic remove', async function () {
       let calledCb = false
-      const cb = (byId, context) => {
+      const cb: Callback = (byId, context) => {
         calledCb = true
         expect(context.path, 'cb has context').toBe('test')
         expect(byId['0'].before, 'has right before').toStrictEqual({

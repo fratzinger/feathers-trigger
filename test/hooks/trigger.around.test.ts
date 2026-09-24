@@ -521,17 +521,17 @@ describe('hook - trigger', function () {
       let cbCount = 0
       const action: Action = (item, { subscription: sub }) => {
         cbCount++
-        if (sub.id === 1) {
+        if (sub.name === 'sub1') {
           expect(item, 'correct item for sub1').toStrictEqual({
             before: undefined,
             item: { id: 1 },
           })
-        } else if (sub.id === 2) {
+        } else if (sub.name === 'sub2') {
           expect(item, 'correct item for sub2').toStrictEqual({
             before: undefined,
             item: { id: 1, test: true },
           })
-        } else if (sub.id === 3) {
+        } else if (sub.name === 'sub3') {
           expect(item, 'correct item for sub3').toStrictEqual({
             before: undefined,
             item: { id: 1, test: true, comment: 'yippieh' },
@@ -542,7 +542,7 @@ describe('hook - trigger', function () {
       }
 
       const sub1: Subscription = {
-        id: 1,
+        name: 'sub1',
         method: 'create',
         service: 'tests',
         manipulateParams: (params) => {
@@ -553,7 +553,7 @@ describe('hook - trigger', function () {
         action,
       }
       const sub2: Subscription = {
-        id: 2,
+        name: 'sub2',
         method: 'create',
         service: 'tests',
         manipulateParams: (params) => {
@@ -564,7 +564,7 @@ describe('hook - trigger', function () {
         action,
       }
       const sub3: Subscription = {
-        id: 3,
+        name: 'sub3',
         method: 'create',
         service: 'tests',
         action,
@@ -588,17 +588,17 @@ describe('hook - trigger', function () {
       let cbCount = 0
       const action: Action = (item, { subscription: sub }) => {
         cbCount++
-        if (sub.id === 1) {
+        if (sub.name === 'sub1') {
           expect(item, 'correct item for sub1').toStrictEqual({
             before: undefined,
             item: { id: 1 },
           })
-        } else if (sub.id === 2) {
+        } else if (sub.name === 'sub2') {
           expect(item, 'correct item for sub2').toStrictEqual({
             before: undefined,
             item: { id: 1, test: true },
           })
-        } else if (sub.id === 3) {
+        } else if (sub.name === 'sub3') {
           expect(item, 'correct item for sub3').toStrictEqual({
             before: undefined,
             item: { id: 1, test: true, comment: 'yippieh' },
@@ -609,7 +609,7 @@ describe('hook - trigger', function () {
       }
 
       const sub1: Subscription = {
-        id: 1,
+        name: 'sub1',
         method: 'create',
         service: 'tests',
         manipulateParams: (params) => {
@@ -620,7 +620,7 @@ describe('hook - trigger', function () {
         action,
       }
       const sub2: Subscription = {
-        id: 2,
+        name: 'sub2',
         method: 'create',
         service: 'tests',
         manipulateParams: (params) => {
@@ -631,7 +631,7 @@ describe('hook - trigger', function () {
         action,
       }
       const sub3: Subscription = {
-        id: 3,
+        name: 'sub3',
         method: 'create',
         service: 'tests',
         action,
@@ -891,26 +891,26 @@ describe('hook - trigger', function () {
         { id: 2, test: true, date: addDays(beforeDate, 2) },
       ]
 
-      const calledTrigger1ById = {}
-      const calledTrigger2ById = {}
+      const calledTrigger1ById: Record<string, boolean> = {}
+      const calledTrigger2ById: Record<string, boolean> = {}
 
-      const action = ({ before, item }, { subscription: sub }) => {
-        if (sub.id === 1) {
+      const action: Action = ({ before, item }, { subscription: sub }) => {
+        if (sub.name === 'sub1') {
           calledTrigger1ById[item.id] = true
-        } else if (sub.id === 2) {
+        } else if (sub.name === 'sub2') {
           calledTrigger2ById[item.id] = true
         }
       }
 
       const { service } = mock('patch', [
         {
-          id: 1,
+          name: 'sub1',
           result: ({ before }) => ({ date: { $lt: before.date } }),
           fetchBefore: true,
           action,
         },
         {
-          id: 2,
+          name: 'sub2',
           result: { test: true },
           action,
         },

@@ -21,7 +21,7 @@ export function mock(
   const service = app.service('tests')
   const hook = trigger(options)
 
-  const hooks = {
+  const hooks: Record<'around', Partial<Record<MethodName, any[]>>> = {
     around: {},
   }
 
