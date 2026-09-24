@@ -22,8 +22,11 @@ export const resultById = async <H extends HookContext>(
     options,
   )
 
-  if (params) {
-    const contextParams = { ...context.params }
+  // without `$select`, `context.result` is what a refetch with the params of
+  // the call returns, so it only needs a refetch for manipulated params. The
+  // query filters of the call don't count, as the refetch is by id
+  if (params && !context.params.query?.$select) {
+    const contextParams = { ...context.params, query: {} }
     delete contextParams.changesById
     if (options?.deleteParams) {
       options.deleteParams.forEach((key) => {
@@ -31,7 +34,7 @@ export const resultById = async <H extends HookContext>(
       })
     }
 
-    if (dequal(params, context.params)) {
+    if (dequal(params, contextParams)) {
       params = null
     }
   }

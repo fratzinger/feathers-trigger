@@ -1059,6 +1059,28 @@ describe('hook - trigger', function () {
         withFetchBefore: { id: 0, test: true },
       })
     })
+
+    it('patch: $select has full item, even if the patch changes a field of the query', async function () {
+      const items: unknown[] = []
+      const { service } = mock('patch', {
+        action: ({ item }) => {
+          items.push(item)
+        },
+      })
+
+      await service.create({ id: 0, test: true, comment: 'awesome' })
+
+      const result = await service.patch(
+        0,
+        { test: false },
+        { query: { test: true, $select: ['id'] } },
+      )
+
+      expect(result, 'has right result').toStrictEqual({ id: 0 })
+      expect(items, 'called action with full item').toStrictEqual([
+        { id: 0, test: false, comment: 'awesome' },
+      ])
+    })
   })
 
   describe('remove', function () {

@@ -73,7 +73,9 @@ export const getOrFindByIdParams = async <H extends HookContext = HookContext>(
       return
     }
 
-    const query = { ...context.params.query }
+    // after the call, the item is known by its id: the filters of the call
+    // don't apply anymore, a patch might even have changed the filtered fields
+    const query = options.type === 'before' ? { ...context.params.query } : {}
 
     delete query.$select
 
