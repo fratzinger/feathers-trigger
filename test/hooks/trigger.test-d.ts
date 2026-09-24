@@ -90,4 +90,22 @@ describe('hook - trigger type test', function () {
       })
     })
   })
+
+  describe('options resolved from the context', () => {
+    test('isBlocking, fetchBefore and debug can be functions of the context', () => {
+      trigger<FakeHookContext>({
+        isBlocking: (context) => {
+          expectTypeOf(context).toEqualTypeOf<FakeHookContext>()
+          return true
+        },
+        fetchBefore: async () => false,
+        debug: true,
+        action: (change, { subscription }) => {
+          expectTypeOf(subscription.isBlocking).toEqualTypeOf<boolean>()
+          expectTypeOf(subscription.fetchBefore).toEqualTypeOf<boolean>()
+          expectTypeOf(subscription.debug).toEqualTypeOf<boolean>()
+        },
+      })
+    })
+  })
 })

@@ -15,10 +15,14 @@ import type {
   Paginated,
   ServiceInterface,
 } from '@feathersjs/feathers'
-import type { MaybeArray, Promisable } from '../types.internal.js'
+import type {
+  DistributiveOmit,
+  MaybeArray,
+  Promisable,
+} from '../types.internal.js'
 
 export type ActionOptions<H extends HookContext = HookContext, T = any> = {
-  subscription: Subscription<H, T>
+  subscription: SubscriptionResolved<H, T>
   items: Change<T>[]
   context: H
 }
@@ -36,6 +40,13 @@ export type BatchAction<H extends HookContext = HookContext, T = any> = (
 export type HookTriggerOptions<H extends HookContext = HookContext, T = any> =
   | MaybeArray<Subscription<H, T>>
   | ((context: H) => Promisable<MaybeArray<Subscription<H, T>>>)
+
+/**
+ * A boolean, or a function that resolves it from the context. The function is
+ * called once per service call, in the before hook.
+ */
+export type ResolvableBoolean<H extends HookContext = HookContext> =
+  boolean | ((context: H) => Promisable<boolean>)
 
 export type Condition<
   H extends HookContext = HookContext,
@@ -81,16 +92,16 @@ export interface SubscriptionBase<
   /**
    * @default true
    */
-  isBlocking?: boolean
+  isBlocking?: ResolvableBoolean<H>
   /**
    * @default false
    */
-  fetchBefore?: boolean
+  fetchBefore?: ResolvableBoolean<H>
 
   /**
    * @default false
    */
-  debug?: boolean
+  debug?: ResolvableBoolean<H>
 }
 
 export type SubscriptionSingleAction<
@@ -115,7 +126,13 @@ export type Subscription<
 export type SubscriptionResolved<
   H extends HookContext = HookContext,
   T = Record<string, any>,
-> = Subscription<H, T> & {
+> = DistributiveOmit<
+  Subscription<H, T>,
+  'isBlocking' | 'fetchBefore' | 'debug'
+> & {
+  isBlocking: boolean
+  fetchBefore: boolean
+  debug: boolean
   identifier?: string
   paramsResolved?: Record<string, any>
   /**
@@ -172,7 +189,10 @@ export const trigger = <
   }
 }
 
-const makeDebug = (sub: Subscription, context: HookContext) => {
+const makeDebug = (
+  sub: Pick<SubscriptionResolved, 'name' | 'debug'>,
+  context: HookContext,
+) => {
   if (!sub.debug) {
     return () => {}
   }
@@ -205,7 +225,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
       if (sub.debug) {
         debug = true
       }
-      const log = makeDebug(sub as any, context)
+      const log = makeDebug(sub, context)
       if (!('action' in sub) && !('batchAction' in sub)) {
         log('skipping because no action provided')
         return false
@@ -280,7 +300,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
   }
 
   for (const sub of subs) {
-    const log = makeDebug(sub as any, context)
+    const log = makeDebug(sub, context)
 
     sub.paramsResolved =
       (await getOrFindByIdParams(context, {
@@ -495,17 +515,9 @@ const getSubscriptions = async <H extends HookContext, T = any>(
     ? _subscriptionOrSubscriptions
     : [_subscriptionOrSubscriptions]
 
-  const subscriptions = _subscriptions.map(
-    (x) =>
-      ({ isBlocking: true, fetchBefore: false, ...x }) as SubscriptionResolved<
-        H,
-        T
-      >,
-  )
-
   const { path, method } = context
 
-  return subscriptions.filter((sub) => {
+  const subscriptions = _subscriptions.filter((sub) => {
     if (
       sub.service &&
       ((typeof sub.service === 'string' && sub.service !== path) ||
@@ -523,6 +535,32 @@ const getSubscriptions = async <H extends HookContext, T = any>(
 
     return true
   })
+
+  // resolved once, before anything else, so the after hook, the debug log and
+  // the action all see the same booleans
+  return await Promise.all(
+    subscriptions.map(
+      async (sub) =>
+        ({
+          ...sub,
+          isBlocking: await resolveBoolean(sub.isBlocking, context, true),
+          fetchBefore: await resolveBoolean(sub.fetchBefore, context, false),
+          debug: await resolveBoolean(sub.debug, context, false),
+        }) as SubscriptionResolved<H, T>,
+    ),
+  )
+}
+
+const resolveBoolean = async <H extends HookContext>(
+  value: ResolvableBoolean<H> | undefined,
+  context: H,
+  defaultValue: boolean,
+): Promise<boolean> => {
+  if (value === undefined) {
+    return defaultValue
+  }
+
+  return !!(typeof value === 'function' ? await value(context) : value)
 }
 
 /**
@@ -573,7 +611,7 @@ const getDataMismatchIds = (
  * Used in the before and the after hook, so both work with the same items.
  */
 const shouldFetchBefore = (
-  sub: Pick<SubscriptionBase<any, any>, 'fetchBefore' | 'before'>,
+  sub: Pick<SubscriptionResolved<any, any>, 'fetchBefore' | 'before'>,
 ): boolean => !!sub.fetchBefore || !!sub.before
 
 const isSubscriptionInBatchMode = (
