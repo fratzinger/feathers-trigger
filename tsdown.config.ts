@@ -6,4 +6,8 @@ export default defineConfig({
   format: ['esm'],
   dts: true,
   clean: true,
+  // strips the in-source tests
+  define: {
+    'import.meta.vitest': 'undefined',
+  },
 })

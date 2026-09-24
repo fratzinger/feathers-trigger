@@ -1,6 +1,7 @@
 import { expectTypeOf } from 'vitest'
-import type { Change, ActionOptions } from '../../src/index.js'
-import { trigger } from '../../src/index.js'
+import type { Change } from '../changes-by-id/index.js'
+import type { ActionOptions } from './types.js'
+import { trigger } from './trigger.js'
 import type { HookContext, Service } from '@feathersjs/feathers'
 
 describe('hook - trigger type test', function () {

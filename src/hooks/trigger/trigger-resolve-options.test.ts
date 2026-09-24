@@ -1,6 +1,6 @@
 import type { HookContext } from '@feathersjs/feathers'
-import { mock as mockBeforeAfter } from './base-mock.js'
-import { mock as mockAround } from './base-mock-around.js'
+import { mock as mockBeforeAfter } from './test-utils/base-mock.js'
+import { mock as mockAround } from './test-utils/base-mock-around.js'
 
 const modes = [
   { mode: 'before-after', mock: mockBeforeAfter },

@@ -35,6 +35,9 @@
     "LICENSE",
     "README.md",
     "src/**",
+    "!src/**/*.test.ts",
+    "!src/**/*.test-d.ts",
+    "!src/**/test-utils/**",
     "dist/**"
   ],
   "packageManager": "pnpm@12.6.0",

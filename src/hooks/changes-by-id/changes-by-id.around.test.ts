@@ -1,9 +1,9 @@
-import type { Change, HookChangesByIdOptions } from '../../src/index.js'
-import { changesById } from '../../src/index.js'
+import type { Change, HookChangesByIdOptions } from './types.js'
+import { changesById } from './changes-by-id.js'
 import { MemoryService } from '@feathersjs/memory'
 import type { HookContext, Id } from '@feathersjs/feathers'
 import { feathers } from '@feathersjs/feathers'
-import type { MethodName } from '../../src/types.internal.js'
+import type { MethodName } from '../../types.internal.js'
 
 type Callback = (byId: Record<Id, Change>, context: HookContext) => void
 
@@ -11,30 +11,15 @@ function mock(
   cb: Callback,
   hookName: MethodName,
   options?: Partial<HookChangesByIdOptions>,
-  beforeHook?: (context: HookContext) => Promise<HookContext>,
-  afterHook?: (context: HookContext) => Promise<HookContext>,
 ) {
   const app = feathers()
   app.use('/test', new MemoryService())
   const service = app.service('test')
   const hook = changesById(cb, options)
 
-  const beforeAll = [hook]
-  if (beforeHook) {
-    beforeAll.push(beforeHook)
-  }
-
-  const afterAll = [hook]
-  if (afterHook) {
-    afterAll.push(afterHook)
-  }
-
   service.hooks({
-    before: {
-      [hookName]: beforeAll,
-    },
-    after: {
-      [hookName]: afterAll,
+    around: {
+      [hookName]: [hook],
     },
   })
 

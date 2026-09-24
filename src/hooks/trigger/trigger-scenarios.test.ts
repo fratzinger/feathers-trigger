@@ -1,14 +1,14 @@
-import type { HookTriggerOptions } from '../../src/index.js'
-import { trigger } from '../../src/index.js'
+import type { HookTriggerOptions } from './types.js'
+import { trigger } from './trigger.js'
 import { MemoryService } from '@feathersjs/memory'
 import { populate } from 'feathers-graph-populate'
 import type { HookContext, Id } from '@feathersjs/feathers'
 import { feathers } from '@feathersjs/feathers'
 import { resolveResult } from 'feathers-utils'
 
-import { addDays } from './utils.js'
+import { addDays } from './test-utils/add-days.js'
 
-import type { MethodName } from '../../src/types.internal.js'
+import type { MethodName } from '../../types.internal.js'
 
 declare module '@feathersjs/feathers' {
   interface Params {

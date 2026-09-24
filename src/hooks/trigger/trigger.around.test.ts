@@ -1,8 +1,8 @@
-import type { Subscription, Action } from '../../src/index.js'
-import type { MethodName } from '../../src/types.internal.js'
-import { mock } from './base-mock-around.js'
+import type { Subscription, Action } from './types.js'
+import type { MethodName } from '../../types.internal.js'
+import { mock } from './test-utils/base-mock-around.js'
 
-import { addDays } from './utils.js'
+import { addDays } from './test-utils/add-days.js'
 
 describe('hook - trigger', function () {
   describe('general', function () {

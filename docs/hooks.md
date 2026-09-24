@@ -8,7 +8,7 @@ sidebarDepth: 2
 
 | type                        | methods                               | multi | details                                                                                 |
 | --------------------------- | ------------------------------------- | ----- | --------------------------------------------------------------------------------------- |
-| `before`, `after`, `around` | `create`, `patch`, `update`, `remove` | yes   | [source](https://github.com/fratzinger/feathers-trigger/blob/main/src/hooks/trigger.ts) |
+| `before`, `after`, `around` | `create`, `patch`, `update`, `remove` | yes   | [source](https://github.com/fratzinger/feathers-trigger/tree/main/src/hooks/trigger) |
 
 ### Options
 
@@ -53,7 +53,7 @@ const action = async (changes) => {
 
 | type                        | methods                               | multi | details                                                                                     |
 | --------------------------- | ------------------------------------- | ----- | ------------------------------------------------------------------------------------------- |
-| `before`, `after`, `around` | `create`, `patch`, `update`, `remove` | yes   | [source](https://github.com/fratzinger/feathers-trigger/blob/main/src/hooks/changesById.ts) |
+| `before`, `after`, `around` | `create`, `patch`, `update`, `remove` | yes   | [source](https://github.com/fratzinger/feathers-trigger/tree/main/src/hooks/changes-by-id) |
 
 ### Options
 
