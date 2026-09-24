@@ -42,6 +42,7 @@ export type Condition<
   T = Record<string, any>,
 > =
   | Record<string, any>
+  | boolean
   | ((item: T, context: H) => Promisable<boolean | Record<string, any>>)
 
 export type ConditionChange<
@@ -49,6 +50,7 @@ export type ConditionChange<
   T = Record<string, any>,
 > =
   | Record<string, any>
+  | boolean
   | ((
       change: {
         item: T
@@ -116,6 +118,11 @@ export type SubscriptionResolved<
 > = Subscription<H, T> & {
   identifier?: string
   paramsResolved?: Record<string, any>
+  /**
+   * multi create only: every item of `context.data` and whether it matched
+   * `data`. Only set if some items matched and some didn't
+   */
+  dataMatches?: { item: any; isMatch: boolean }[]
 }
 
 let hookIdCounter = 0
@@ -193,61 +200,72 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
 
   let debug = false
 
-  if (!Array.isArray(context.data)) {
-    const result: Subscription<H, T>[] = []
-    await Promise.all(
-      subs.map(async (sub) => {
-        if (sub.debug) {
-          debug = true
-        }
-        const log = makeDebug(sub as any, context)
-        if (!('action' in sub) && !('batchAction' in sub)) {
-          log('skipping because no action provided')
-          return
-        }
+  const isMatch = await Promise.all(
+    subs.map(async (sub) => {
+      if (sub.debug) {
+        debug = true
+      }
+      const log = makeDebug(sub as any, context)
+      if (!('action' in sub) && !('batchAction' in sub)) {
+        log('skipping because no action provided')
+        return false
+      }
 
-        if (
-          sub.name &&
-          context.params.skipTrigger &&
-          (context.params.skipTrigger === sub.name ||
-            (Array.isArray(context.params.skipTrigger) &&
-              context.params.skipTrigger.includes(sub.name)))
-        ) {
-          log('skipping because of context.params.skipTrigger')
-          return
-        }
+      if (
+        sub.name &&
+        context.params.skipTrigger &&
+        (context.params.skipTrigger === sub.name ||
+          (Array.isArray(context.params.skipTrigger) &&
+            context.params.skipTrigger.includes(sub.name)))
+      ) {
+        log('skipping because of context.params.skipTrigger')
+        return false
+      }
 
-        // test data
-        if (
-          sub.data !== undefined &&
-          !(await testCondition({
-            condition: sub.data,
-            item: context.data,
-            context,
-          }))
-        ) {
+      // test data - on multi create for every item, just like on single create
+      if (sub.data !== undefined) {
+        const items = Array.isArray(context.data)
+          ? context.data
+          : [context.data]
+
+        const dataMatches = await Promise.all(
+          items.map(async (item) => ({
+            item,
+            isMatch: await testCondition({
+              condition: sub.data,
+              item,
+              context,
+            }),
+          })),
+        )
+
+        if (!dataMatches.some(({ isMatch }) => isMatch)) {
           log('skipping because of data mismatch')
-          return
+          return false
         }
 
-        // test params
-        if (
-          sub.params !== undefined &&
-          !(await testCondition({
-            condition: sub.params,
-            item: context.params,
-            context,
-          }))
-        ) {
-          log('skipping because of params mismatch')
-          return
+        if (!dataMatches.every(({ isMatch }) => isMatch)) {
+          sub.dataMatches = dataMatches
         }
+      }
 
-        result.push(sub)
-      }),
-    )
-    subs = result
-  }
+      // test params
+      if (
+        sub.params !== undefined &&
+        !(await testCondition({
+          condition: sub.params,
+          item: context.params,
+          context,
+        }))
+      ) {
+        log('skipping because of params mismatch')
+        return false
+      }
+
+      return true
+    }),
+  )
+  subs = subs.filter((_, i) => isMatch[i])
 
   if (!subs?.length) {
     if (debug) {
@@ -272,7 +290,14 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
         skipHooks: false,
       })) ?? {}
 
-    sub.identifier = JSON.stringify(sub.paramsResolved.query || {})
+    const fetchBefore = shouldFetchBefore(sub)
+
+    // subs only share the 'before' items if they fetch them the same way,
+    // otherwise a sub without `fetchBefore` leaves an empty 'before' for the others
+    sub.identifier = JSON.stringify({
+      query: sub.paramsResolved.query || {},
+      fetchBefore,
+    })
     if (context.params.changesById?.[sub.identifier]?.itemsBefore) {
       continue
     }
@@ -283,7 +308,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
       skipHooks: false,
       params: () => (sub.paramsResolved ? sub.paramsResolved : null),
       deleteParams: ['trigger'],
-      fetchBefore: sub.fetchBefore || !!sub.before,
+      fetchBefore,
     })
 
     set(
@@ -320,7 +345,7 @@ const triggerAfter = async <H extends HookContext>(
           context.params.skipTrigger.includes(sub.name)))
     ) {
       log('skipping because of context.params.skipTrigger')
-      return context
+      continue
     }
 
     const itemsBefore = sub.identifier
@@ -335,7 +360,7 @@ const triggerAfter = async <H extends HookContext>(
         params: sub.manipulateParams,
         skipHooks: false,
         deleteParams: ['trigger'],
-        fetchBefore: sub.fetchBefore,
+        fetchBefore: shouldFetchBefore(sub),
       })
 
       set(context, ['params', 'changesById', sub.identifier], changesById)
@@ -351,12 +376,19 @@ const triggerAfter = async <H extends HookContext>(
     }
 
     const changes = Object.values(changesById)
+    const dataMismatchIds = getDataMismatchIds(context, sub)
 
     const batchActionArguments: [change: Change, options: ActionOptions][] = []
 
     for (const change of changes) {
       const { before } = change
       const { item } = change
+
+      const id = item?.[context.service.id]
+      if (dataMismatchIds?.has(String(id))) {
+        log('skipping because of data mismatch', id)
+        continue
+      }
 
       const changeForSub = change
       if (
@@ -492,6 +524,57 @@ const getSubscriptions = async <H extends HookContext, T = any>(
     return true
   })
 }
+
+/**
+ * On multi create, `data` is tested for every item in the before hook. This
+ * maps the items that didn't match to the ids of the created items: by their
+ * id in `data` if there is one, otherwise by their position in the result.
+ */
+const getDataMismatchIds = (
+  context: HookContext,
+  sub: SubscriptionResolved,
+): Set<string> | undefined => {
+  const { dataMatches } = sub
+  if (!dataMatches) {
+    return
+  }
+
+  const idField = context.service.id
+  const ids = new Set<string>()
+
+  dataMatches.forEach(({ item, isMatch }, index) => {
+    if (isMatch) {
+      return
+    }
+
+    let id = item?.[idField]
+
+    if (id == null) {
+      if (
+        !Array.isArray(context.result) ||
+        context.result.length !== dataMatches.length
+      ) {
+        throw new Error(
+          "Can't map 'context.data' to 'context.result' to test 'data' on multi create",
+        )
+      }
+
+      id = context.result[index]?.[idField]
+    }
+
+    ids.add(String(id))
+  })
+
+  return ids
+}
+
+/**
+ * A `before` condition needs the items before, so it implies `fetchBefore`.
+ * Used in the before and the after hook, so both work with the same items.
+ */
+const shouldFetchBefore = (
+  sub: Pick<SubscriptionBase<any, any>, 'fetchBefore' | 'before'>,
+): boolean => !!sub.fetchBefore || !!sub.before
 
 const isSubscriptionInBatchMode = (
   sub: Subscription,

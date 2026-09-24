@@ -1,3 +1,4 @@
+import type { Change } from '../../src/index.js'
 import { mock } from './base-mock.js'
 
 describe('trigger batch mode', () => {
@@ -17,6 +18,26 @@ describe('trigger batch mode', () => {
     expect(batchAction).toHaveBeenCalledTimes(1)
     // the batchAction gets all three changes in one call
     expect(batchAction.mock.lastCall?.[0]).toHaveLength(3)
+  })
+
+  it('create: passes only items with matching data on multi create in batch mode', async function () {
+    const batchAction = vi.fn().mockName('batchAction')
+    const { service } = mock('create', {
+      data: { test: true },
+      batchAction,
+    })
+
+    await service.create([
+      { id: 0, test: false },
+      { id: 1, test: true },
+      { id: 2, test: true },
+    ])
+    expect(batchAction).toHaveBeenCalledTimes(1)
+    expect(
+      batchAction.mock.lastCall?.[0].map(
+        ([change]: [Change]) => change.item.id,
+      ),
+    ).toStrictEqual([1, 2])
   })
 
   it('patch: triggers on multi create with conditions in batch mode', async function () {

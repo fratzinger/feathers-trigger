@@ -192,6 +192,36 @@ describe('hook - trigger', function () {
       await service.remove(0, { skipTrigger: ['skipMe'] })
       expect(cbCount, 'action cb was called').toBe(0)
     })
+
+    it('can skip named sub on multi create without skipping the others', async function () {
+      let skippedCount = 0
+      let otherCount = 0
+      const { service } = mock('create', [
+        {
+          name: 'skipMe',
+          action: () => {
+            skippedCount++
+          },
+        },
+        {
+          name: 'other',
+          action: () => {
+            otherCount++
+          },
+        },
+      ])
+
+      await service.create(
+        [
+          { id: 0, test: true },
+          { id: 1, test: true },
+        ],
+        // @ts-expect-error params not typed
+        { skipTrigger: 'skipMe' },
+      )
+      expect(skippedCount, 'skipped action not called').toBe(0)
+      expect(otherCount, 'other action called for every item').toBe(2)
+    })
   })
 
   describe('create', function () {
@@ -247,6 +277,146 @@ describe('hook - trigger', function () {
         { id: 2, test: true },
       ])
       expect(cbCount, 'action cb was called three times').toBe(3)
+    })
+
+    it('create: tests params on multi create', async function () {
+      let cbCount = 0
+      const { service } = mock('create', {
+        params: { foo: true },
+        action: () => {
+          cbCount++
+        },
+      })
+
+      await service.create([
+        { id: 0, test: true },
+        { id: 1, test: true },
+      ])
+      expect(cbCount, 'action not called').toBe(0)
+
+      await service.create(
+        [
+          { id: 2, test: true },
+          { id: 3, test: true },
+        ],
+        // @ts-expect-error params not typed
+        { foo: true },
+      )
+      expect(cbCount, 'action called for every item').toBe(2)
+    })
+
+    it('create: tests data', async function () {
+      const created: unknown[] = []
+      const { service } = mock('create', {
+        data: { test: true },
+        action: ({ item }) => {
+          created.push(item)
+        },
+      })
+
+      await service.create({ id: 0, test: false })
+      expect(created, 'action not called').toStrictEqual([])
+
+      await service.create({ id: 1, test: true })
+      expect(created, 'action called for matching item').toStrictEqual([
+        { id: 1, test: true },
+      ])
+    })
+
+    it('create: tests data per item on multi create', async function () {
+      const created: unknown[] = []
+      const { service } = mock('create', {
+        data: { test: true },
+        action: ({ item }) => {
+          created.push(item)
+        },
+      })
+
+      await service.create([
+        { id: 0, test: false },
+        { id: 1, test: false },
+      ])
+      expect(created, 'action not called').toStrictEqual([])
+
+      await service.create([
+        { id: 2, test: false },
+        { id: 3, test: true },
+        { id: 4, test: false },
+      ])
+      expect(created, 'action only called for matching item').toStrictEqual([
+        { id: 3, test: true },
+      ])
+    })
+
+    it('create: tests data per item on multi create without ids in data', async function () {
+      const created: unknown[] = []
+      const { service } = mock('create', {
+        data: (item) => item.test === true,
+        action: ({ item }) => {
+          created.push(item)
+        },
+      })
+
+      await service.create([{ test: false }, { test: true }, { test: false }])
+      expect(created, 'action only called for matching item').toStrictEqual([
+        { id: 1, test: true },
+      ])
+    })
+
+    it('create: maps data per item by id on multi create, regardless of the order', async function () {
+      const created: unknown[] = []
+      const { service } = mock('create', {
+        data: { test: true },
+        action: ({ item }) => {
+          created.push(item)
+        },
+      })
+
+      // runs after the trigger checked `data`, so the result has a different
+      // order than `data` had while checking
+      service.hooks({
+        before: {
+          create: [
+            (context) => {
+              context.data = (context.data as any[]).toReversed()
+            },
+          ],
+        },
+      })
+
+      await service.create([
+        { id: 0, test: true },
+        { id: 1, test: false },
+      ])
+      expect(created, 'action only called for matching item').toStrictEqual([
+        { id: 0, test: true },
+      ])
+    })
+
+    it('create: logs the id of an item skipped because of data on multi create', async function () {
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+      try {
+        const { service } = mock('create', {
+          debug: true,
+          data: { test: true },
+          action: () => {},
+        })
+
+        await service.create([
+          { id: 0, test: false },
+          { id: 1, test: true },
+        ])
+
+        expect(log).toHaveBeenCalledWith(
+          '[FEATHERS_TRIGGER DEBUG]',
+          expect.any(String),
+          "service('tests').create()",
+          'skipping because of data mismatch',
+          0,
+        )
+      } finally {
+        log.mockRestore()
+      }
     })
 
     it('create: does not trigger with service mismatch', async function () {
@@ -470,24 +640,6 @@ describe('hook - trigger', function () {
       )
       expect(cbCount).toBe(3)
       expect(result, 'has subset').toStrictEqual({ id: 1, comment: 'yippieh' })
-    })
-
-    it('create: triggers on single create with data', async function () {
-      let cbCount = 0
-      const { service } = mock('create', {
-        method: 'create',
-        service: 'tests',
-        data: { test: true },
-        action: () => {
-          cbCount++
-        },
-      })
-
-      await service.create({ id: 0, test: false })
-      expect(cbCount, "action cb wasn't called").toBe(0)
-
-      await service.create({ id: 1, test: true })
-      expect(cbCount, 'action cb was called').toBe(1)
     })
   })
 
@@ -852,6 +1004,60 @@ describe('hook - trigger', function () {
 
       await service.patch(item.id, { count: 3 })
       expect(cbCount, "action cb wasn't called").toBe(1)
+    })
+
+    it("patch: treats a 'before' condition like fetchBefore", async function () {
+      // the same subscription, once with `fetchBefore` and once with a
+      // `before` condition, which needs the items before as well
+      for (const sub of [{ fetchBefore: true }, { before: { test: true } }]) {
+        const { service } = mock('patch', { ...sub, action: () => {} })
+
+        // runs after the trigger fetched the items before, so the patch
+        // hits an item that is missing in 'before'
+        service.hooks({
+          before: {
+            patch: [
+              async (context) => {
+                await context.service.create({ id: 99, test: true })
+              },
+            ],
+          },
+        })
+
+        await service.create({ id: 0, test: true })
+
+        await expect(
+          service.patch(null, { test: false }),
+          JSON.stringify(sub),
+        ).rejects.toThrow('Mismatch!')
+      }
+    })
+
+    it('patch: passes before to sub with fetchBefore next to sub without', async function () {
+      const befores: Record<string, unknown> = {}
+      const { service } = mock('patch', [
+        {
+          name: 'withoutFetchBefore',
+          action: ({ before }) => {
+            befores.withoutFetchBefore = before
+          },
+        },
+        {
+          name: 'withFetchBefore',
+          fetchBefore: true,
+          action: ({ before }) => {
+            befores.withFetchBefore = before
+          },
+        },
+      ])
+
+      const item = await service.create({ id: 0, test: true })
+      await service.patch(item.id, { test: false })
+
+      expect(befores).toStrictEqual({
+        withoutFetchBefore: undefined,
+        withFetchBefore: { id: 0, test: true },
+      })
     })
   })
 
