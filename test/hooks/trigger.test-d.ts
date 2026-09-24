@@ -78,4 +78,16 @@ describe('hook - trigger type test', function () {
       ])
     })
   })
+
+  describe('conditions', () => {
+    test('conditions can be a boolean', () => {
+      trigger<FakeHookContext>({
+        data: true,
+        params: false,
+        before: true,
+        result: false,
+        action: () => {},
+      })
+    })
+  })
 })

@@ -393,6 +393,32 @@ describe('hook - trigger', function () {
       ])
     })
 
+    it('create: logs the id of an item skipped because of data on multi create', async function () {
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+      try {
+        const { service } = mock('create', {
+          debug: true,
+          data: { test: true },
+          action: () => {},
+        })
+
+        await service.create([
+          { id: 0, test: false },
+          { id: 1, test: true },
+        ])
+
+        expect(log).toHaveBeenCalledWith(
+          '[FEATHERS_TRIGGER DEBUG]',
+          expect.any(String),
+          "service('tests').create()",
+          'skipping because of data mismatch',
+          0,
+        )
+      } finally {
+        log.mockRestore()
+      }
+    })
+
     it('create: does not trigger with service mismatch', async function () {
       let cbCount = 0
       const { service } = mock('create', {
@@ -982,6 +1008,33 @@ describe('hook - trigger', function () {
 
       await service.patch(item.id, { count: 3 })
       expect(cbCount, "action cb wasn't called").toBe(1)
+    })
+
+    it("patch: treats a 'before' condition like fetchBefore", async function () {
+      // the same subscription, once with `fetchBefore` and once with a
+      // `before` condition, which needs the items before as well
+      for (const sub of [{ fetchBefore: true }, { before: { test: true } }]) {
+        const { service } = mock('patch', { ...sub, action: () => {} })
+
+        // runs after the trigger fetched the items before, so the patch
+        // hits an item that is missing in 'before'
+        service.hooks({
+          before: {
+            patch: [
+              async (context) => {
+                await context.service.create({ id: 99, test: true })
+              },
+            ],
+          },
+        })
+
+        await service.create({ id: 0, test: true })
+
+        await expect(
+          service.patch(null, { test: false }),
+          JSON.stringify(sub),
+        ).rejects.toThrow('Mismatch!')
+      }
     })
 
     it('patch: passes before to sub with fetchBefore next to sub without', async function () {

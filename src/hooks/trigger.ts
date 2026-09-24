@@ -42,6 +42,7 @@ export type Condition<
   T = Record<string, any>,
 > =
   | Record<string, any>
+  | boolean
   | ((item: T, context: H) => Promisable<boolean | Record<string, any>>)
 
 export type ConditionChange<
@@ -49,6 +50,7 @@ export type ConditionChange<
   T = Record<string, any>,
 > =
   | Record<string, any>
+  | boolean
   | ((
       change: {
         item: T
@@ -288,7 +290,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
         skipHooks: false,
       })) ?? {}
 
-    const fetchBefore = !!sub.fetchBefore || !!sub.before
+    const fetchBefore = shouldFetchBefore(sub)
 
     // subs only share the 'before' items if they fetch them the same way,
     // otherwise a sub without `fetchBefore` leaves an empty 'before' for the others
@@ -358,7 +360,7 @@ const triggerAfter = async <H extends HookContext>(
         params: sub.manipulateParams,
         skipHooks: false,
         deleteParams: ['trigger'],
-        fetchBefore: sub.fetchBefore,
+        fetchBefore: shouldFetchBefore(sub),
       })
 
       set(context, ['params', 'changesById', sub.identifier], changesById)
@@ -382,8 +384,9 @@ const triggerAfter = async <H extends HookContext>(
       const { before } = change
       const { item } = change
 
-      if (dataMismatchIds?.has(String(item?.[context.service.id]))) {
-        log('skipping because of data mismatch')
+      const id = item?.[context.service.id]
+      if (dataMismatchIds?.has(String(id))) {
+        log('skipping because of data mismatch', id)
         continue
       }
 
@@ -564,6 +567,14 @@ const getDataMismatchIds = (
 
   return ids
 }
+
+/**
+ * A `before` condition needs the items before, so it implies `fetchBefore`.
+ * Used in the before and the after hook, so both work with the same items.
+ */
+const shouldFetchBefore = (
+  sub: Pick<SubscriptionBase<any, any>, 'fetchBefore' | 'before'>,
+): boolean => !!sub.fetchBefore || !!sub.before
 
 const isSubscriptionInBatchMode = (
   sub: Subscription,
