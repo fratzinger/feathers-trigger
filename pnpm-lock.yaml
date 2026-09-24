@@ -170,8 +170,8 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3
       feathers-utils:
-        specifier: ^10.8.3
-        version: 10.8.3(@feathersjs/feathers@5.0.50)
+        specifier: ^10.8.4
+        version: 10.8.4(@feathersjs/feathers@5.0.50)
       sift:
         specifier: ^17.1.3
         version: 17.1.3
@@ -1385,8 +1385,8 @@ packages:
     peerDependencies:
       '@feathersjs/feathers': ^5.0.0
 
-  feathers-utils@10.8.3:
-    resolution: {integrity: sha512-Mrr0qpEbkDPNyKlDMyaYrzCTJHZWsssP5p+EuVBu+FCu2LtYEIhZaTc8YXurDB80EDA/kV1pazjbYRb0LsACtA==}
+  feathers-utils@10.8.4:
+    resolution: {integrity: sha512-SRH9O6u1+R/QMNtfdYSitbXTbzuCoVnQmwzGyu8Ljx+I/0HSfi/oj5w9Rb5ExLwN0/rCtfCx/lOEyZIirV3aYA==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       '@feathersjs/feathers': ^5.0.0
@@ -3219,9 +3219,8 @@ snapshots:
       '@feathersjs/feathers': 5.0.50
       lodash: 4.18.1
 
-  feathers-utils@10.8.3(@feathersjs/feathers@5.0.50):
+  feathers-utils@10.8.4(@feathersjs/feathers@5.0.50):
     dependencies:
-      '@feathersjs/adapter-commons': 5.0.50
       '@feathersjs/errors': 5.0.50
       '@feathersjs/feathers': 5.0.50
       dequal: 2.0.3
