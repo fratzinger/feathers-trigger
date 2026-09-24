@@ -1,8 +1,8 @@
-import type { Subscription, Action } from '../../src/index.js'
-import type { MethodName } from '../../src/types.internal.js'
-import { mock } from './base-mock-around.js'
+import type { Subscription, Action } from './types.js'
+import type { MethodName } from '../../types.internal.js'
+import { mock } from './test-utils/base-mock.js'
 
-import { addDays } from './utils.js'
+import { addDays } from './test-utils/add-days.js'
 
 describe('hook - trigger', function () {
   describe('general', function () {
@@ -474,9 +474,7 @@ describe('hook - trigger', function () {
       const { service } = mock('create', {
         method: 'create',
         service: 'tests',
-        result: ({ item }) => {
-          return item.count > 10
-        },
+        result: ({ item }) => item.count > 10,
         action: (item) => {
           cbCount++
           expect(item).toStrictEqual({
@@ -498,9 +496,7 @@ describe('hook - trigger', function () {
       const { service } = mock('create', {
         method: 'create',
         service: 'tests',
-        result: ({ item }) => ({
-          count: { $gt: 10 },
-        }),
+        result: () => ({ count: { $gt: 10 } }),
         action: (item) => {
           cbCount++
           expect(item).toStrictEqual({
@@ -521,17 +517,17 @@ describe('hook - trigger', function () {
       let cbCount = 0
       const action: Action = (item, { subscription: sub }) => {
         cbCount++
-        if (sub.id === 1) {
+        if (sub.name === 'sub1') {
           expect(item, 'correct item for sub1').toStrictEqual({
             before: undefined,
             item: { id: 1 },
           })
-        } else if (sub.id === 2) {
+        } else if (sub.name === 'sub2') {
           expect(item, 'correct item for sub2').toStrictEqual({
             before: undefined,
             item: { id: 1, test: true },
           })
-        } else if (sub.id === 3) {
+        } else if (sub.name === 'sub3') {
           expect(item, 'correct item for sub3').toStrictEqual({
             before: undefined,
             item: { id: 1, test: true, comment: 'yippieh' },
@@ -542,7 +538,7 @@ describe('hook - trigger', function () {
       }
 
       const sub1: Subscription = {
-        id: 1,
+        name: 'sub1',
         method: 'create',
         service: 'tests',
         manipulateParams: (params) => {
@@ -553,7 +549,7 @@ describe('hook - trigger', function () {
         action,
       }
       const sub2: Subscription = {
-        id: 2,
+        name: 'sub2',
         method: 'create',
         service: 'tests',
         manipulateParams: (params) => {
@@ -564,7 +560,7 @@ describe('hook - trigger', function () {
         action,
       }
       const sub3: Subscription = {
-        id: 3,
+        name: 'sub3',
         method: 'create',
         service: 'tests',
         action,
@@ -588,17 +584,17 @@ describe('hook - trigger', function () {
       let cbCount = 0
       const action: Action = (item, { subscription: sub }) => {
         cbCount++
-        if (sub.id === 1) {
+        if (sub.name === 'sub1') {
           expect(item, 'correct item for sub1').toStrictEqual({
             before: undefined,
             item: { id: 1 },
           })
-        } else if (sub.id === 2) {
+        } else if (sub.name === 'sub2') {
           expect(item, 'correct item for sub2').toStrictEqual({
             before: undefined,
             item: { id: 1, test: true },
           })
-        } else if (sub.id === 3) {
+        } else if (sub.name === 'sub3') {
           expect(item, 'correct item for sub3').toStrictEqual({
             before: undefined,
             item: { id: 1, test: true, comment: 'yippieh' },
@@ -609,7 +605,7 @@ describe('hook - trigger', function () {
       }
 
       const sub1: Subscription = {
-        id: 1,
+        name: 'sub1',
         method: 'create',
         service: 'tests',
         manipulateParams: (params) => {
@@ -620,7 +616,7 @@ describe('hook - trigger', function () {
         action,
       }
       const sub2: Subscription = {
-        id: 2,
+        name: 'sub2',
         method: 'create',
         service: 'tests',
         manipulateParams: (params) => {
@@ -631,7 +627,7 @@ describe('hook - trigger', function () {
         action,
       }
       const sub3: Subscription = {
-        id: 3,
+        name: 'sub3',
         method: 'create',
         service: 'tests',
         action,
@@ -707,7 +703,7 @@ describe('hook - trigger', function () {
       const { service } = mock('update', {
         method: 'update',
         service: 'tests',
-        result: ({ item }) => item.count > 10,
+        result: () => ({ count: { $gt: 10 } }),
         action: () => {
           cbCount++
         },
@@ -891,26 +887,26 @@ describe('hook - trigger', function () {
         { id: 2, test: true, date: addDays(beforeDate, 2) },
       ]
 
-      const calledTrigger1ById = {}
-      const calledTrigger2ById = {}
+      const calledTrigger1ById: Record<string, boolean> = {}
+      const calledTrigger2ById: Record<string, boolean> = {}
 
-      const action = ({ before, item }, { subscription: sub }) => {
-        if (sub.id === 1) {
+      const action: Action = ({ before, item }, { subscription: sub }) => {
+        if (sub.name === 'sub1') {
           calledTrigger1ById[item.id] = true
-        } else if (sub.id === 2) {
+        } else if (sub.name === 'sub2') {
           calledTrigger2ById[item.id] = true
         }
       }
 
       const { service } = mock('patch', [
         {
-          id: 1,
+          name: 'sub1',
           result: ({ before }) => ({ date: { $lt: before.date } }),
           fetchBefore: true,
           action,
         },
         {
-          id: 2,
+          name: 'sub2',
           result: { test: true },
           action,
         },
@@ -970,7 +966,7 @@ describe('hook - trigger', function () {
       const { service } = mock('patch', {
         method: 'patch',
         service: 'tests',
-        result: ({ item }) => item.count > 10,
+        result: () => ({ count: { $gt: 10 } }),
         action: () => {
           cbCount++
         },
@@ -1062,6 +1058,28 @@ describe('hook - trigger', function () {
         withoutFetchBefore: undefined,
         withFetchBefore: { id: 0, test: true },
       })
+    })
+
+    it('patch: $select has full item, even if the patch changes a field of the query', async function () {
+      const items: unknown[] = []
+      const { service } = mock('patch', {
+        action: ({ item }) => {
+          items.push(item)
+        },
+      })
+
+      await service.create({ id: 0, test: true, comment: 'awesome' })
+
+      const result = await service.patch(
+        0,
+        { test: false },
+        { query: { test: true, $select: ['id'] } },
+      )
+
+      expect(result, 'has right result').toStrictEqual({ id: 0 })
+      expect(items, 'called action with full item').toStrictEqual([
+        { id: 0, test: false, comment: 'awesome' },
+      ])
     })
   })
 

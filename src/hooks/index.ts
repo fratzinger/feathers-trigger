@@ -1,2 +1,2 @@
-export * from './changesById.js'
-export * from './trigger.js'
+export * from './changes-by-id/index.js'
+export * from './trigger/index.js'

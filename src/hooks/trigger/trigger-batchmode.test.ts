@@ -1,5 +1,5 @@
-import type { Change } from '../../src/index.js'
-import { mock } from './base-mock.js'
+import type { Change } from '../changes-by-id/index.js'
+import { mock } from './test-utils/base-mock.js'
 
 describe('trigger batch mode', () => {
   it('create: triggers on multi create without condition in batch mode', async function () {

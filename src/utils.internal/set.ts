@@ -1,6 +1,31 @@
-import { get, set } from '../src/utils.internal.js'
+import type { Path } from './path.js'
+import { toKeys } from './path.js'
 
-describe('utils.internal', function () {
+/**
+ * Minimal replacement for `lodash/set`
+ */
+export const set = (obj: any, path: Path, value: unknown): void => {
+  const keys = toKeys(path)
+  const lastKey = keys.at(-1)
+
+  if (lastKey === undefined) {
+    return
+  }
+
+  let current = obj
+  for (const key of keys.slice(0, -1)) {
+    if (typeof current[key] !== 'object' || current[key] === null) {
+      current[key] = {}
+    }
+    current = current[key]
+  }
+
+  current[lastKey] = value
+}
+
+if (import.meta.vitest) {
+  const { describe, it, expect } = import.meta.vitest
+
   describe('set', function () {
     it('creates missing objects along a dotted path', function () {
       const obj: any = {}
@@ -32,15 +57,4 @@ describe('utils.internal', function () {
       expect(obj).toStrictEqual({ params: { changesById: 2 } })
     })
   })
-
-  describe('get', function () {
-    it('reads a dotted path', function () {
-      const obj = { params: { changesById: { itemsBefore: { a: 1 } } } }
-      expect(get(obj, 'params.changesById.itemsBefore')).toStrictEqual({ a: 1 })
-    })
-
-    it('returns undefined for a missing path instead of throwing', function () {
-      expect(get({ params: {} }, 'params.nope.deeper')).toBe(undefined)
-    })
-  })
-})
+}

@@ -1,9 +1,9 @@
-import type { HookTriggerOptions } from '../../src/index.js'
-import { trigger } from '../../src/index.js'
+import type { HookTriggerOptions } from '../types.js'
+import { trigger } from '../trigger.js'
 import { MemoryService } from '@feathersjs/memory'
 import type { HookContext } from '@feathersjs/feathers'
 import { feathers } from '@feathersjs/feathers'
-import type { MethodName } from '../../src/types.internal.js'
+import type { MethodName } from '../../../types.internal.js'
 
 export type MockOptions = {
   before?: (context: HookContext) => Promise<HookContext>
@@ -21,7 +21,7 @@ export function mock(
   const service = app.service('tests')
   const hook = trigger(options)
 
-  const hooks = {
+  const hooks: Record<'around', Partial<Record<MethodName, any[]>>> = {
     around: {},
   }
 

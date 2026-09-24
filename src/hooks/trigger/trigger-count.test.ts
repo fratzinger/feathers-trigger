@@ -2,8 +2,8 @@ import type { Application } from '@feathersjs/feathers'
 import { feathers } from '@feathersjs/feathers'
 import type { Mock } from 'vitest'
 import { MemoryService } from '@feathersjs/memory'
-import type { HookTriggerOptions } from '../../src/index.js'
-import { trigger } from '../../src/index.js'
+import type { HookTriggerOptions } from './types.js'
+import { trigger } from './trigger.js'
 
 declare module '@feathersjs/feathers' {
   interface Params {
