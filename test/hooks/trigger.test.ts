@@ -279,6 +279,32 @@ describe('hook - trigger', function () {
       expect(cbCount, 'action cb was called three times').toBe(3)
     })
 
+    it('create: tests params on multi create', async function () {
+      let cbCount = 0
+      const { service } = mock('create', {
+        params: { foo: true },
+        action: () => {
+          cbCount++
+        },
+      })
+
+      await service.create([
+        { id: 0, test: true },
+        { id: 1, test: true },
+      ])
+      expect(cbCount, 'action not called').toBe(0)
+
+      await service.create(
+        [
+          { id: 2, test: true },
+          { id: 3, test: true },
+        ],
+        // @ts-expect-error params not typed
+        { foo: true },
+      )
+      expect(cbCount, 'action called for every item').toBe(2)
+    })
+
     it('create: does not trigger with service mismatch', async function () {
       let cbCount = 0
       const { service } = mock('create', {

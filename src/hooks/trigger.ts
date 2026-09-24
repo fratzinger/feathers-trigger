@@ -193,61 +193,60 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
 
   let debug = false
 
-  if (!Array.isArray(context.data)) {
-    const result: Subscription<H, T>[] = []
-    await Promise.all(
-      subs.map(async (sub) => {
-        if (sub.debug) {
-          debug = true
-        }
-        const log = makeDebug(sub as any, context)
-        if (!('action' in sub) && !('batchAction' in sub)) {
-          log('skipping because no action provided')
-          return
-        }
+  const isMatch = await Promise.all(
+    subs.map(async (sub) => {
+      if (sub.debug) {
+        debug = true
+      }
+      const log = makeDebug(sub as any, context)
+      if (!('action' in sub) && !('batchAction' in sub)) {
+        log('skipping because no action provided')
+        return false
+      }
 
-        if (
-          sub.name &&
-          context.params.skipTrigger &&
-          (context.params.skipTrigger === sub.name ||
-            (Array.isArray(context.params.skipTrigger) &&
-              context.params.skipTrigger.includes(sub.name)))
-        ) {
-          log('skipping because of context.params.skipTrigger')
-          return
-        }
+      if (
+        sub.name &&
+        context.params.skipTrigger &&
+        (context.params.skipTrigger === sub.name ||
+          (Array.isArray(context.params.skipTrigger) &&
+            context.params.skipTrigger.includes(sub.name)))
+      ) {
+        log('skipping because of context.params.skipTrigger')
+        return false
+      }
 
-        // test data
-        if (
-          sub.data !== undefined &&
-          !(await testCondition({
-            condition: sub.data,
-            item: context.data,
-            context,
-          }))
-        ) {
-          log('skipping because of data mismatch')
-          return
-        }
+      // test data - only for a single item, on multi create there is no
+      // reliable way to map the items of `context.data` to the result
+      if (
+        sub.data !== undefined &&
+        !Array.isArray(context.data) &&
+        !(await testCondition({
+          condition: sub.data,
+          item: context.data,
+          context,
+        }))
+      ) {
+        log('skipping because of data mismatch')
+        return false
+      }
 
-        // test params
-        if (
-          sub.params !== undefined &&
-          !(await testCondition({
-            condition: sub.params,
-            item: context.params,
-            context,
-          }))
-        ) {
-          log('skipping because of params mismatch')
-          return
-        }
+      // test params
+      if (
+        sub.params !== undefined &&
+        !(await testCondition({
+          condition: sub.params,
+          item: context.params,
+          context,
+        }))
+      ) {
+        log('skipping because of params mismatch')
+        return false
+      }
 
-        result.push(sub)
-      }),
-    )
-    subs = result
-  }
+      return true
+    }),
+  )
+  subs = subs.filter((_, i) => isMatch[i])
 
   if (!subs?.length) {
     if (debug) {
