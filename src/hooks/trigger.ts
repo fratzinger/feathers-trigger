@@ -272,7 +272,14 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
         skipHooks: false,
       })) ?? {}
 
-    sub.identifier = JSON.stringify(sub.paramsResolved.query || {})
+    const fetchBefore = !!sub.fetchBefore || !!sub.before
+
+    // subs only share the 'before' items if they fetch them the same way,
+    // otherwise a sub without `fetchBefore` leaves an empty 'before' for the others
+    sub.identifier = JSON.stringify({
+      query: sub.paramsResolved.query || {},
+      fetchBefore,
+    })
     if (context.params.changesById?.[sub.identifier]?.itemsBefore) {
       continue
     }
@@ -283,7 +290,7 @@ const triggerBefore = async <H extends HookContext, T = Record<string, any>>(
       skipHooks: false,
       params: () => (sub.paramsResolved ? sub.paramsResolved : null),
       deleteParams: ['trigger'],
-      fetchBefore: sub.fetchBefore || !!sub.before,
+      fetchBefore,
     })
 
     set(
@@ -320,7 +327,7 @@ const triggerAfter = async <H extends HookContext>(
           context.params.skipTrigger.includes(sub.name)))
     ) {
       log('skipping because of context.params.skipTrigger')
-      return context
+      continue
     }
 
     const itemsBefore = sub.identifier

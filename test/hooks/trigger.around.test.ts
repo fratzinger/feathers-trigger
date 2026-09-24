@@ -192,6 +192,36 @@ describe('hook - trigger', function () {
       await service.remove(0, { skipTrigger: ['skipMe'] })
       expect(cbCount, 'action cb was called').toBe(0)
     })
+
+    it('can skip named sub on multi create without skipping the others', async function () {
+      let skippedCount = 0
+      let otherCount = 0
+      const { service } = mock('create', [
+        {
+          name: 'skipMe',
+          action: () => {
+            skippedCount++
+          },
+        },
+        {
+          name: 'other',
+          action: () => {
+            otherCount++
+          },
+        },
+      ])
+
+      await service.create(
+        [
+          { id: 0, test: true },
+          { id: 1, test: true },
+        ],
+        // @ts-expect-error params not typed
+        { skipTrigger: 'skipMe' },
+      )
+      expect(skippedCount, 'skipped action not called').toBe(0)
+      expect(otherCount, 'other action called for every item').toBe(2)
+    })
   })
 
   describe('create', function () {
@@ -856,6 +886,33 @@ describe('hook - trigger', function () {
 
       await service.patch(item.id, { count: 3 })
       expect(cbCount, "action cb wasn't called").toBe(1)
+    })
+
+    it('patch: passes before to sub with fetchBefore next to sub without', async function () {
+      const befores: Record<string, unknown> = {}
+      const { service } = mock('patch', [
+        {
+          name: 'withoutFetchBefore',
+          action: ({ before }) => {
+            befores.withoutFetchBefore = before
+          },
+        },
+        {
+          name: 'withFetchBefore',
+          fetchBefore: true,
+          action: ({ before }) => {
+            befores.withFetchBefore = before
+          },
+        },
+      ])
+
+      const item = await service.create({ id: 0, test: true })
+      await service.patch(item.id, { test: false })
+
+      expect(befores).toStrictEqual({
+        withoutFetchBefore: undefined,
+        withFetchBefore: { id: 0, test: true },
+      })
     })
   })
 
