@@ -1,9 +1,8 @@
 import type { HookContext, Id } from '@feathersjs/feathers'
 import type { Change } from '../changes-by-id/index.js'
 import { changesByIdAfter } from '../changes-by-id/index.js'
-import { set } from '../../utils.internal/index.js'
 import type { Promisable } from '../../types.internal.js'
-import { getConfig } from './config.js'
+import { getCallState, getConfig } from './config.js'
 import { getDataMismatchIds } from './data-matches.js'
 import { makeDebug } from './debug.js'
 import {
@@ -65,23 +64,22 @@ const getChangesById = async (
     return
   }
 
-  const itemsBefore = context.params.changesById?.[sub.identifier]?.itemsBefore
+  const { itemsBefore, changes } = getCallState(context)
+  const before = itemsBefore[sub.identifier]
 
-  if (itemsBefore) {
+  if (before) {
     makeDebug(sub, context)("fetching after with 'changesByIdAfter'")
 
-    const changesById = await changesByIdAfter(context, itemsBefore, null, {
+    changes[sub.identifier] = await changesByIdAfter(context, before, null, {
       name: ['changesById', sub.identifier],
       params: sub.manipulateParams,
       skipHooks: false,
-      deleteParams: ['trigger'],
       fetchBefore: shouldFetchBefore(sub),
     })
-
-    set(context, ['params', 'changesById', sub.identifier], changesById)
+    delete itemsBefore[sub.identifier]
   }
 
-  return context.params.changesById?.[sub.identifier]
+  return changes[sub.identifier]
 }
 
 /**

@@ -3,8 +3,7 @@ import {
   changesByIdBefore,
   getOrFindByIdParams,
 } from '../changes-by-id/index.js'
-import { set } from '../../utils.internal/index.js'
-import { setConfig } from './config.js'
+import { getCallState, setConfig } from './config.js'
 import { getDataMatches } from './data-matches.js'
 import { makeDebug } from './debug.js'
 import {
@@ -117,7 +116,6 @@ const fetchItemsBefore = async <H extends HookContext, T>(
   sub.paramsResolved =
     (await getOrFindByIdParams(context, {
       params: sub.manipulateParams,
-      deleteParams: ['trigger'],
       type: 'before',
       skipHooks: false,
     })) ?? {}
@@ -130,7 +128,8 @@ const fetchItemsBefore = async <H extends HookContext, T>(
     query: sub.paramsResolved.query || {},
     fetchBefore,
   })
-  if (context.params.changesById?.[sub.identifier]?.itemsBefore) {
+  const { itemsBefore } = getCallState(context)
+  if (itemsBefore[sub.identifier]) {
     return
   }
 
@@ -139,11 +138,10 @@ const fetchItemsBefore = async <H extends HookContext, T>(
   const before = await changesByIdBefore(context, {
     skipHooks: false,
     params: () => (sub.paramsResolved ? sub.paramsResolved : null),
-    deleteParams: ['trigger'],
     fetchBefore,
   })
 
-  set(context, ['params', 'changesById', sub.identifier, 'itemsBefore'], before)
+  itemsBefore[sub.identifier] = before
 }
 
 if (import.meta.vitest) {
