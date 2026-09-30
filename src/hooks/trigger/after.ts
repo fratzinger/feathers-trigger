@@ -9,7 +9,6 @@ import {
   isSkippedByParams,
   isSubscriptionInBatchMode,
   isSubscriptionNormalMode,
-  shouldFetchBefore,
 } from './subscriptions.js'
 import { testCondition } from './test-condition.js'
 import type { ActionOptions, SubscriptionResolved } from './types.js'
@@ -52,34 +51,30 @@ export const triggerAfter = async <H extends HookContext>(
 }
 
 /**
- * The changes for the subscription. The first subscription with an identifier
- * computes them from the items before and stores them in place of those, so
- * the other subscriptions with the same identifier reuse them.
+ * The changes for the subscription. The first subscription of a fetch group
+ * computes them from the items before, the others reuse them.
  */
 const getChangesById = async (
   sub: SubscriptionResolved,
   context: HookContext,
 ): Promise<Record<Id, Change> | undefined> => {
-  if (!sub.identifier) {
+  const group = getCallState(context).fetchGroupOf.get(sub)
+
+  if (!group) {
     return
   }
 
-  const { itemsBefore, changes } = getCallState(context)
-  const before = itemsBefore[sub.identifier]
-
-  if (before) {
+  if (!group.changes) {
     makeDebug(sub, context)("fetching after with 'changesByIdAfter'")
 
-    changes[sub.identifier] = await changesByIdAfter(context, before, null, {
-      name: ['changesById', sub.identifier],
+    group.changes = changesByIdAfter(context, group.itemsBefore, null, {
       params: sub.manipulateParams,
       skipHooks: false,
-      fetchBefore: shouldFetchBefore(sub),
+      fetchBefore: group.fetchBefore,
     })
-    delete itemsBefore[sub.identifier]
   }
 
-  return changes[sub.identifier]
+  return await group.changes
 }
 
 /**

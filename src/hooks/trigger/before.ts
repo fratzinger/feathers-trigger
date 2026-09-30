@@ -3,6 +3,7 @@ import {
   changesByIdBefore,
   getOrFindByIdParams,
 } from '../changes-by-id/index.js'
+import { isEqual, snapshot } from '../../utils.internal/index.js'
 import { getCallState, setConfig } from './config.js'
 import { getDataMatches } from './data-matches.js'
 import { makeDebug } from './debug.js'
@@ -121,27 +122,31 @@ const fetchItemsBefore = async <H extends HookContext, T>(
     })) ?? {}
 
   const fetchBefore = shouldFetchBefore(sub)
+  const query = sub.paramsResolved.query || {}
+  const { fetchGroups, fetchGroupOf } = getCallState(context)
 
   // subs only share the 'before' items if they fetch them the same way,
   // otherwise a sub without `fetchBefore` leaves an empty 'before' for the others
-  sub.identifier = JSON.stringify({
-    query: sub.paramsResolved.query || {},
-    fetchBefore,
-  })
-  const { itemsBefore } = getCallState(context)
-  if (itemsBefore[sub.identifier]) {
-    return
+  let group = fetchGroups.find(
+    (group) => group.fetchBefore === fetchBefore && isEqual(group.query, query),
+  )
+
+  if (!group) {
+    log("fetching before with 'changesByIdBefore'")
+
+    // taken before the fetch, whose hooks may change the query
+    const snapshotOfQuery = snapshot(query)
+    const itemsBefore = await changesByIdBefore(context, {
+      skipHooks: false,
+      params: () => (sub.paramsResolved ? sub.paramsResolved : null),
+      fetchBefore,
+    })
+
+    group = { query: snapshotOfQuery, fetchBefore, itemsBefore }
+    fetchGroups.push(group)
   }
 
-  log("fetching before with 'changesByIdBefore'")
-
-  const before = await changesByIdBefore(context, {
-    skipHooks: false,
-    params: () => (sub.paramsResolved ? sub.paramsResolved : null),
-    fetchBefore,
-  })
-
-  itemsBefore[sub.identifier] = before
+  fetchGroupOf.set(sub, group)
 }
 
 if (import.meta.vitest) {

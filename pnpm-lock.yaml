@@ -166,9 +166,6 @@ importers:
 
   .:
     dependencies:
-      dequal:
-        specifier: ^2.0.3
-        version: 2.0.3
       feathers-utils:
         specifier: ^10.8.4
         version: 10.8.4(@feathersjs/feathers@5.0.50)

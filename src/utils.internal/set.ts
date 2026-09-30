@@ -37,7 +37,7 @@ if (import.meta.vitest) {
 
     it('treats every array segment as a single key, dots included', function () {
       const obj: any = {}
-      // the identifier is a JSON string and may well contain dots
+      // a key may well contain dots
       set(obj, ['params', 'changesById', '{"a.b":1}', 'itemsBefore'], 2)
       expect(obj.params.changesById['{"a.b":1}'].itemsBefore).toBe(2)
     })

@@ -1,5 +1,5 @@
-import { dequal } from 'dequal'
 import type { HookContext, Id, Params } from '@feathersjs/feathers'
+import { isEqual } from '../../utils.internal/index.js'
 import { getOrFindById } from './get-or-find-by-id.js'
 import { getOrFindByIdParams } from './get-or-find-by-id-params.js'
 import type { GetOrFindByIdParamsOptions } from './types.js'
@@ -34,7 +34,7 @@ export const resultById = async <H extends HookContext>(
       })
     }
 
-    if (dequal(params, contextParams)) {
+    if (isEqual(params, contextParams)) {
       params = null
     }
   }

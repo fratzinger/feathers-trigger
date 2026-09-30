@@ -1,14 +1,26 @@
-import type { HookContext, Id } from '@feathersjs/feathers'
+import type { HookContext, Id, Query } from '@feathersjs/feathers'
 import type { Change } from '../changes-by-id/index.js'
 import type { SubscriptionResolved } from './types.js'
+
+/**
+ * The items before the call, fetched once for all subscriptions that fetch
+ * them with equal queries
+ */
+export type FetchGroup = {
+  /** a snapshot of the query the items were fetched with */
+  query: Query
+  fetchBefore: boolean
+  itemsBefore: Record<Id, any>
+  /** the changes of the call, computed once for the whole group */
+  changes?: Promise<Record<Id, Change> | undefined>
+}
 
 type CallState = {
   /** the subscriptions left after the before hook, per `trigger()` hook */
   subscriptions: Record<string, SubscriptionResolved<any, any>[]>
-  /** the items before the call, per `sub.identifier` */
-  itemsBefore: Record<string, Record<Id, any> | undefined>
-  /** the changes of the call, per `sub.identifier` */
-  changes: Record<string, Record<Id, Change> | undefined>
+  fetchGroups: FetchGroup[]
+  /** the fetch group of every subscription */
+  fetchGroupOf: Map<SubscriptionResolved<any, any>, FetchGroup>
 }
 
 /**
@@ -25,7 +37,7 @@ const callStates = new WeakMap<HookContext, CallState>()
 export function getCallState(context: HookContext): CallState {
   let state = callStates.get(context)
   if (!state) {
-    state = { subscriptions: {}, itemsBefore: {}, changes: {} }
+    state = { subscriptions: {}, fetchGroups: [], fetchGroupOf: new Map() }
     callStates.set(context, state)
   }
   return state
