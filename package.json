@@ -49,7 +49,6 @@
     "docs:build": "vitepress build docs"
   },
   "dependencies": {
-    "dequal": "^2.0.3",
     "feathers-utils": "^10.8.4",
     "sift": "^17.1.3"
   },

@@ -29,7 +29,7 @@ export const trigger = <
     throw new Error('You should define subscriptions')
   }
 
-  // every `trigger()` hook gets its own slot in `context.params.trigger`, so
+  // every `trigger()` hook gets its own slot in the state of the call, so
   // that multiple trigger hooks can be registered next to each other
   const hookId = `${hookIdCounter++}`
 

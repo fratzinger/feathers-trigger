@@ -118,7 +118,6 @@ export type SubscriptionResolved<
   isBlocking: boolean
   fetchBefore: boolean
   debug: boolean
-  identifier?: string
   paramsResolved?: Record<string, any>
   /**
    * multi create only: every item of `context.data` and whether it matched
